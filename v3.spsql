@@ -124,6 +124,7 @@ CREATE TABLE Fproject.ticket_priorities ( -- One to many relationship
 CREATE TABLE Fproject.ticket (
     id SERIAL PRIMARY KEY,
     subject VARCHAR,
+    tag VARCHAR, -- Optional: A tag to categorize the ticket
     content TEXT,
     file_data BYTEA, -- Optional: If you want to store file data in the database
     status_id INT REFERENCES Fproject.ticket_status(id),
@@ -172,17 +173,16 @@ CREATE TABLE Fproject.notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     read BOOLEAN DEFAULT FALSE -- To track whether the notification has been read
 );
-
-CREATE TABLE Fproject.ticket_action (
-    id SERIAL PRIMARY KEY,
-    ticket_id INT REFERENCES Fproject.ticket(id),
-    user_id INT REFERENCES Fproject."user"(id), -- The user (manager, admin, etc.) who performed the action
-    action_type VARCHAR, -- Could be 'comment', 'status_change', 'priority_change', etc.
-    action_description TEXT, -- Details of the action, could be a comment text or a description of what was changed
-    previous_value TEXT, -- Optional: The previous value before the action, for status/priority changes
-    new_value TEXT, -- Optional: The new value after the action, for status/priority changes
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- The date and time when the action was performed
+CREATE TABLE Fproject.event_store (
+    event_id SERIAL PRIMARY KEY,
+    event_type VARCHAR NOT NULL,
+    aggregate_type VARCHAR NOT NULL, -- 'ticket' for ticket-related events
+    aggregate_id INT NOT NULL, -- The ticket ID to which the event relates
+    payload JSON NOT NULL, -- Detailed event data (flexible structure)
+    user_id INT REFERENCES Fproject."user"(id), -- The user responsible for the event
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Creating a 'permissions' table
 CREATE TABLE Fproject.permissions (
@@ -234,9 +234,7 @@ CREATE INDEX idx_ticket_content ON Fproject.ticket USING GIN (to_tsvector('engli
 -- Full-text search index on ticket comments
 CREATE INDEX idx_ticket_comment ON Fproject.ticket_comment USING GIN (to_tsvector('english', comment));
 
-CREATE INDEX idx_ticket_action_description ON Fproject.ticket_action USING GIN (to_tsvector('english', action_description));
 
-CREATE INDEX idx_ticket_action_type ON Fproject.ticket_action(action_type);
 
 
 
