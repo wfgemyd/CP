@@ -124,7 +124,6 @@ CREATE TABLE Fproject.ticket_priorities ( -- One to many relationship
 CREATE TABLE Fproject.ticket (
     id SERIAL PRIMARY KEY,
     subject VARCHAR,
-    tag VARCHAR, -- Optional: A tag to categorize the ticket
     content TEXT,
     file_data BYTEA, -- Optional: If you want to store file data in the database
     status_id INT REFERENCES Fproject.ticket_status(id),
@@ -206,14 +205,6 @@ CREATE TABLE Fproject.role_permissions (
     PRIMARY KEY (role_id, permission_id)
 );
 
--- Optionally, a table to track which users have access to which tickets if access is not solely based on role
-CREATE TABLE Fproject.ticket_access (
-    ticket_id INT REFERENCES Fproject.ticket(id),
-    user_id INT REFERENCES Fproject."user"(id),
-    PRIMARY KEY (ticket_id, user_id)
-);
-
-
 CREATE TABLE Fproject.user_status (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES Fproject."user"(id),
@@ -231,7 +222,6 @@ CREATE TABLE Fproject.user_status_audit (
     changed_by_user_id INT REFERENCES Fproject."user"(id),
     change_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
 
 
 -- Index for searching tickets by user details
