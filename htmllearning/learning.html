@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>  <! –– information about the document ––>
+    <meta charset="UTF-8"> <!-- character encoding -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- useful -->
+    <title>HTML learning</title>
+</head>
+<body>
+    <h1>Test </h1>
+    <button style="color: blueviolet"> Click me</button>
+    <p> This is a test paragraph </p>
+    <p> This is a <b>text</b> paragraph </p>
+    <p> This is a <i>text</i> paragraph </p>
+    <p> This is a <big>text</big> test paragraph </p>
+    <p> This is a <small> test </small> paragraph </p>
+    <p> This is a <sub>test </sub>  paragraph </p>
+    <p> This is a <sup>test</sup>  paragraph </p>
+    <p> This is a <ins>test</ins> test paragraph </p>
+    <p> This is a <del>test</del> test paragraph </p>
+    <p> This is a <mark>test </mark> paragraph </p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+        do eiusmod tempor incididunt <span style="color: brown"> labore et dolore magna aliqua.
+        Ut enim ad minim veniam, quis</span>  nostrud exercitation ullamco laboris
+        nisi ut aliquip ex ea commodo consequat. </p>
+    <div style="color: aqua">
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+        do eiusmod tempor incididunt <span style="color: brown"> labore et dolore magna aliqua.
+        Ut enim ad minim veniam, quis</span>  nostrud exercitation ullamco laboris
+        nisi ut aliquip ex ea commodo consequat. </p>
+
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+        do eiusmod tempor incididunt <span style="color: brown"> labore et dolore magna aliqua.
+        Ut enim ad minim veniam, quis</span>  nostrud exercitation ullamco laboris
+        nisi ut aliquip ex ea commodo consequat. </p>
+    </div>
+    <hr> <!-- horizontal line -->
+    <h2>Test </h2>
+    <a href="https://www.google.com" target=_self title="when you hover over the ling this is will be shown">
+        <img src="derp.png" alt="pic of derp" title="derpy">
+    </a>
+    <a href="mailto:wfgemyd@gmail.com" target="_self" title="will send an email to">
+        EMAIL
+    </a>
+    <h3>Test </h3>
+        <video autoplay muted loop src="Starter_DS.MP4" width="400" alt="random vid"></video>
+    <h4>Test </h4>
+    <br> <!-- breaking line -->
+    <h4>unorderd list</h4>
+    <ul>
+        <li>test</li>
+        <li>test</li>
+        <li>test</li>
+        <li>test</li>
+        <li>test
+                <ul>
+                    <li>test</li>
+                    <li>test</li>
+                    <li>test</li>
+                </ul>
+        </li>
+
+        <li>test</li>
+    </ul>
+
+    <h4>orderd list</h4>
+    <ol type="I">
+        <li>test</li>
+        <li>test</li>
+        <li>test</li>
+        <li>test</li>
+        <li>test</li>
+        <li>test</li>
+        <li>test</li>
+
+    </ol>
+
+    <h4>description list</h4>
+    <dl>
+        <dt>HTML</dt>
+        <dd>Add stuckture to webpage</dd>
+        <dt>css</dt>
+        <dd>Add style to webpage</dd>
+        <dt>afasf</dt>
+        <dd>Add ahsdhae to webpage</dd>
+    </dl>
+
+    <h5>Test </h5>
+
+    <h6>Test </h6>
+
+
+    <h2>tables</h2>
+        <table bgcolor="black" width="auto">
+            <tr bgcolor="#ffe4c4" align="center"> <!-- table row-->
+                <th>1 </th> <!-- table header-->
+                <th>2 </th>
+                <th>3 </th>
+                <th>4 </th>
+                <th>5 </th>
+                <th>6 </th>
+                <th>7 </th>
+            </tr>
+            <tr bgcolor="#f0ffff" align="center" >
+                <td width="200">Aaaaaaaa</td> <!-- table description-->
+                <td width="200">Aaaaaaa</td>
+                <td width="200">Aaaaaa</td>
+                <td width="200">Aaaaa</td>
+                <td width="200">Aaaa</td>
+                <td width="200">Aaa</td>
+                <td width="200">Aa</td>
+            </tr>
+
+        </table>
+
+
+<form action = "smth.php" method="GET"> <!-- GET is good for search bars. POST for passwords -->
+    <div>
+        <label for="fname">first name:</label>
+        <input type="text" id="fname" name="fname" placeholder="fill me papi" required>
+    </div>
+    <br>
+    <div>
+        <label for="email">email:</label>
+        <input type="email" id="email" name="email" placeholder="fill me papi@g.cz" required>
+    </div>
+    <br>
+    <div>
+        <label for="date">date:</label>
+        <input type="date" id="date" name="date" placeholder="fill me date" required>
+    </div>
+    <div>
+        <label>test</label>
+        <input type="radio" name="title" value="1">
+        <label>test3</label>
+        <input type="radio" name="title" value="3">
+        <label>test2</label>
+        <input type="radio" name="title" value="2">
+
+    </div>
+    <br>
+    <div>
+        <label for = "title">title:</label>
+
+        <label for ="test">test</label>
+        <input type="radio" id= "test" name="title" value="1">
+        <label for ="test3">test3</label>
+        <input type="radio" id= "test3" name="title" value="3">
+        <label for ="test2">test2</label>
+        <input type="radio" id= "test2" name="title" value="2">
+
+    </div>
+    <br>
+    <div>
+        <label for ="test">test</label>
+        <input type="checkbox" id= "test" name="title" value="1">
+    </div>
+    <br>
+    <div>
+        <label for="testt">testt:</label>
+        <select id="testt" name="testt">
+            <option value="x">x</option>
+            <option value="x3">x3</option>
+            <option value="x2wwwwwwww">x2wwwwwwww</option>
+        </select>
+
+    </div>
+</form>
+
+
+</body>
+</html>
