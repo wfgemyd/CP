@@ -1,0 +1,40 @@
+@use './fonts.sass' as * //import all the variables from index.sass
+@use './colors.sass' as * //import all the variables from index.sass
+@use './radius.sass' as * //import all the variables from index.sass
+
+$distans_between_elements: 1rem
+
+.first_page_login_container
+  border-radius: $radius_outer
+  padding-left: 5rem
+  padding-right: 5rem
+  display: flex
+  justify-content: center
+  align-items: center
+  flex-direction: column
+  background: $container_background_color
+
+
+  #company_logo
+    width: calc(10*#{$header_fontsize})
+    height: 100%
+    object-fit: contain
+    margin-top: 2rem
+
+  .welcoming_msg
+
+    margin-top: 1.5rem
+    margin-bottom: 4rem
+    h1
+      font-size: $header_fontsize
+      font-weight: $header_fontweight
+
+  .input_container
+    display: flex
+    flex-direction: column
+    margin-bottom: $distans_between_elements
+
+  .login_btn
+    display: flex
+    justify-content: center
+    align-items: center

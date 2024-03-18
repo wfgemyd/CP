@@ -1,0 +1,77 @@
+.first_page_login_container {
+  border-radius: 10px;
+  padding-left: 5rem;
+  padding-right: 5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: #FFFFFF;
+}
+.first_page_login_container #company_logo {
+  width: calc(10 * 2.1rem);
+  height: 100%;
+  object-fit: contain;
+  margin-top: 2rem;
+}
+.first_page_login_container .welcoming_msg {
+  margin-top: 1.5rem;
+  margin-bottom: 4rem;
+}
+.first_page_login_container .welcoming_msg h1 {
+  font-size: 2.1rem;
+  font-weight: bold;
+}
+.first_page_login_container .input_container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+.first_page_login_container .login_btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+button {
+  border: 0.125rem solid #FFFFFF;
+  border-radius: 10px;
+  padding: 8px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #6ccb00;
+  color: #FFFFFF;
+  margin-top: 3rem;
+  margin-bottom: 3.75rem;
+}
+button:hover {
+  background-color: #dadada;
+  border-color: #6ccb00;
+  color: #6ccb00;
+}
+button:active {
+  background-color: #468500;
+  border-color: #6ccb00;
+  color: #FFFFFF;
+}
+
+input {
+  border-color: #dadada;
+  border-width: 0.125rem;
+  border-style: solid;
+  border-radius: 5px;
+  padding: 0.2rem;
+  font-size: 1rem;
+}
+input:focus {
+  border-color: #393e44;
+}
+
+label {
+  font-size: 0.8rem;
+  font-weight: semi-bold;
+  color: #393e44;
+}
+
+/*# sourceMappingURL=main.css.map */

@@ -1,0 +1,26 @@
+@use './radius.sass' as * //import all the variables from index.sass
+@use './colors.sass' as * //import all the variables from index.sass
+@use './fonts.sass' as * //import all the variables from index.sass
+
+%input
+  border-color: $field_border
+  border-width: 0.125rem
+  border-style: solid
+  border-radius: $radius_inner
+  padding: 0.2rem
+  font-size: $input_fontsize
+
+  &:focus
+    border-color: $field_border_clicked
+
+%lbl
+    font-size: $lbl_fontsize
+    font-weight: $lbl_fontweight
+    color: $text_color
+
+input
+  @extend %input
+
+label
+  @extend %lbl
+

@@ -1,0 +1,33 @@
+@use './radius.sass' as * //import all the variables from index.sass
+@use './colors.sass' as * //import all the variables from index.sass
+@use './fonts.sass' as * //import all the variables from index.sass
+@use './login.sass' as l //import all the variables from index.sass
+
+%btn
+  border: 0.125rem solid $container_background_color
+  border-radius: $radius_outer
+  padding: 8px 20px
+  font-size: $btn_fontsize
+  font-weight: $btn_fontweight
+  cursor: pointer
+  background-color: $p_in_nxp
+  color: $container_background_color
+  margin-top: 4rem - l.$distans_between_elements
+  margin-bottom: 3.75rem
+
+
+  &:hover
+    background-color: $field_border
+    border-color: $p_in_nxp
+    color: $p_in_nxp
+
+  &:active
+    background-color: #468500
+    border-color: $p_in_nxp
+    color: $container_background_color
+
+
+button
+  @extend %btn
+
+
