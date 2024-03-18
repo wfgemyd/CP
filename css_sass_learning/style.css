@@ -1,0 +1,45 @@
+body button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+body button:hover {
+  background-color: #f0f0f0;
+}
+
+body {
+  background-color: #f6f8fb;
+}
+body h1 {
+  color: #181e25;
+  text-align: center;
+}
+body p {
+  color: #393e44;
+  font: 16px Arial, sans-serif;
+  border: #dadada;
+  border-radius: 10px;
+  text-align: center;
+}
+body .circle {
+  width: 10px;
+  height: 10px;
+  background-color: #00BFFF;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+body .circle .question-mark {
+  font-size: 8px;
+  color: white;
+}
+body button {
+  background-color: #fca600;
+  color: white;
+  border: 5px solid #ff0a0a;
+}
+
+/*# sourceMappingURL=style.css.map */

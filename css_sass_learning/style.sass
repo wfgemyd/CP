@@ -1,0 +1,77 @@
+//margin is the space outside the border.
+//padding is the space inside the border, between the text and the border.
+
+$background-color: #f6f8fb
+$container_background_color: #FFFFFF
+
+$top_bar_text_color: #788ba5
+
+
+$field_border: #dadada
+$field_border_clicked: #393e44
+
+$n_in_nxp: #fca600
+$x_in_nxp: #0eafe0
+$p_in_nxp: #6ccb00
+
+
+$header-color: #181e25
+$text-color: #393e44
+$secondary_text_color: #7e7e7e
+
+$radius_outer: 10px
+$radius_inner: 6px
+
+//@use FILENAME  as othername/*
+// will make it as a namespace
+
+//@forward FILENAME
+
+//@mixin funcname($var : default)
+//@mixin is a function
+
+//---------------------------------------------
+//shared styles
+%btn
+  border: none
+  border-radius: $radius_outer
+  padding: 10px 20px
+  font-size: 16px
+  cursor: pointer
+
+  &:hover
+    background-color: #f0f0f0
+
+//---------------------------------------------
+
+body
+  background-color: $background-color
+  h1
+    color: $header-color
+    text-align: center
+
+  p
+    color: $text-color
+    font: 16px Arial, sans-serif
+    border: $field_border
+    border-radius: $radius_outer
+    text-align: center
+
+  .circle
+    width: 10px
+    height: 10px
+    background-color: #00BFFF
+    border-radius: 50% //makes it a circle
+    display: flex //centers the text
+    justify-content: center //centers the text
+    align-items: center //centers the text
+
+    .question-mark
+      font-size: 8px
+      color: white
+
+  button
+    @extend %btn
+    background-color: #fca600
+    color: white
+    border: 5px solid #ff0a0a
