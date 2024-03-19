@@ -4,6 +4,17 @@
 
 $distans_between_elements: 1rem
 
+.wrapper
+  position: absolute
+  top: 0
+  bottom: 0
+  left: 0
+  right: 0
+  display: flex
+  justify-content: center
+  align-items: center
+  background-color: $background-color
+
 .first_page_login_container
   border-radius: $radius_outer
   padding-left: 5rem
@@ -15,6 +26,7 @@ $distans_between_elements: 1rem
   background: $container_background_color
 
 
+
   #company_logo
     width: calc(10*#{$header_fontsize})
     height: 100%
@@ -24,7 +36,7 @@ $distans_between_elements: 1rem
   .welcoming_msg
 
     margin-top: 1.5rem
-    margin-bottom: 4rem
+    margin-bottom: 3rem
     h1
       font-size: $header_fontsize
       font-weight: $header_fontweight

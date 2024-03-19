@@ -1,3 +1,15 @@
+.wrapper {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f6f8fb;
+}
+
 .first_page_login_container {
   border-radius: 10px;
   padding-left: 5rem;
@@ -16,7 +28,7 @@
 }
 .first_page_login_container .welcoming_msg {
   margin-top: 1.5rem;
-  margin-bottom: 4rem;
+  margin-bottom: 3rem;
 }
 .first_page_login_container .welcoming_msg h1 {
   font-size: 2.1rem;
@@ -44,6 +56,7 @@ button {
   color: #FFFFFF;
   margin-top: 3rem;
   margin-bottom: 3.75rem;
+  font-family: sans-serif;
 }
 button:hover {
   background-color: #dadada;
@@ -61,8 +74,9 @@ input {
   border-width: 0.125rem;
   border-style: solid;
   border-radius: 5px;
-  padding: 0.2rem;
-  font-size: 1rem;
+  padding: 0.4rem;
+  font-size: 0.8rem;
+  font-family: sans-serif;
 }
 input:focus {
   border-color: #393e44;
@@ -72,6 +86,88 @@ label {
   font-size: 0.8rem;
   font-weight: semi-bold;
   color: #393e44;
+  font-family: sans-serif;
+  margin-bottom: 0.08rem;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: inherit;
+}
+
+html {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border: 0.1rem solid #ffaa22;
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+}
+
+.onboarding_nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+#nav-left .nav-logo {
+  height: auto;
+  width: auto;
+  max-height: 100%;
+  max-width: 6rem;
+  object-fit: contain;
+  padding: 0.5rem;
+}
+
+#nav_items {
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  width: 100%;
+  padding: 0.5rem;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #393e44;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  margin-right: 20px;
+}
+
+.wbi {
+  font-size: 0.6rem;
+  color: #788ba5;
+}
+
+.logout-btn {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #788ba5;
+}
+
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
 }
 
 /*# sourceMappingURL=main.css.map */

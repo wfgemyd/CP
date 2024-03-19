@@ -1,11 +1,16 @@
 <script>
-// Import the login component with a relative path
+import { useRoute } from 'vue-router';
 import LoginComponent from './components/login.vue';
+import NavBarFirstTime from './components/nav_bar_firsttime.vue';
+import Onboarding from './components/onboarding.vue';
+import {computed} from "vue";
 
 export default {
   name: 'App',
   components: {
-    LoginComponent
+    LoginComponent,
+    NavBarFirstTime,
+    Onboarding
   }
 }
 </script>
@@ -19,7 +24,7 @@ export default {
     <main>
       <!-- Main content area -->
       <!-- Dynamically include the login component here -->
-      <LoginComponent />
+      <router-view />
     </main>
     <footer>
       <!-- Your app footer -->
@@ -31,17 +36,9 @@ export default {
 
 <style lang="sass">
 // Importing global styles
-@import './styles/_index.sass'
-#app
-  background: $background-color
-  display: flex
-  justify-content: center
-  align-items: center
-  height: 100vh
+@use './styles/_colors.sass' as *
 
-  .login-page
-    display: flex
-    justify-content: center
-    align-items: center
-    height: 100%
+
+
+
 </style>

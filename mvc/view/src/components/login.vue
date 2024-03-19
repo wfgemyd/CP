@@ -1,10 +1,15 @@
 <script setup>
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 
+const goToOnboarding = () => {
+  router.push('/onboarding');
+};
 </script>
 
 <template>
-
+<div class="wrapper">
   <div class="first_page_login_container login-page">
     <img id="company_logo" src="../assets/nxp__logo.svg.png" alt="company log" title="NXP">
     <div class="welcoming_msg"><h1>Member Log In</h1></div>
@@ -19,16 +24,17 @@
           <input type="password" id="password" name="password" placeholder="Enter your password" required>
         </div>
         <div class="login_btn">
-          <button type="submit">Log In</button>
+          <button @click="goToOnboarding">Log In</button>
         </div>
       </form>
 
   </div>
   </div>
-
+</div>
 
 </template>
-
 <style lang="sass">
-@import '../styles/main.sass'
+@use '../styles/_index.sass' as *
+
+
 </style>
