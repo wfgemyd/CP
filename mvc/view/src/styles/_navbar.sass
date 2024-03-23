@@ -3,6 +3,12 @@
 @use "./radius.sass" as * //import all the variables from index.sass
 @use "./fonts.sass" as * //import all the variables from index.sass
 
+=shared_style
+  font-size: $font_size + 0.29
+  margin-right: 1.3rem
+  text-decoration: none
+  &:hover
+    color: $n_in_nxp
 
 
 .navbar-container
@@ -19,8 +25,7 @@
   border: 0.1rem solid $field_border
   background-color: $container_background_color
 
-
-.onboarding_nav
+.nav_
   display: flex
   justify-content: space-between
   align-items: center
@@ -47,6 +52,25 @@
   font-size: $font_size
   color: $text-color
 
+  .logout-btn
+    img
+      display: flex
+      align-items: center
+      padding-top: 0.25rem
+      color: $top_bar_text_color
+      margin-right: 0.5rem
+
+  .wbi
+    font-size: $font_size - 0.2rem
+    color: $top_bar_text_color
+
+
+  .user-info
+    display: flex
+    flex-direction: column
+    margin-right: 1rem
+    font-size: $font_size
+
 .user_picture
   img
     height: auto
@@ -58,28 +82,41 @@
     border: 0.2rem solid #0eafe0
     margin-right: 0.5rem
 
-
-.user-info
-  display: flex
-  flex-direction: column
-  margin-right: 1.5rem
-
-.wbi
-  font-size: $font_size - 0.2rem
-  color: $top_bar_text_color
-
-.logout-btn
-  img
-    display: flex
-    align-items: center
-    height: 1.1rem
-    padding-top: 0.25rem
-    color: $top_bar_text_color
-    margin-right: 0.5rem
-
 .nav-left, .nav-right
   display: flex
   align-items: center
+
+
+.archive_tab
+  +shared_style
+  color: $text-color
+
+
+.tickets_tab
+  +shared_style
+  color: $text-color
+
+
+.search-container
+  margin-right: 0.5rem
+  display: flex
+  justify-items: center
+  justify-content: end
+  align-items: center
+
+  button
+    position: fixed
+    margin: 0
+    margin-right: 0.4rem
+    padding: 0
+    margin-top: 0.15rem
+    height: auto
+    background: $container_background_color
+    &:hover
+      background-color: $container_background_color
+      border-color: $container_background_color
+
+
 
 
 

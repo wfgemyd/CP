@@ -1,8 +1,10 @@
 <script>
 import { useRoute } from 'vue-router';
 import LoginComponent from './components/login.vue';
-import NavBarFirstTime from './components/nav_bar_firsttime.vue';
+import NavBarFirstTime from './components/nav_bar.vue';
 import Onboarding from './components/onboarding.vue';
+import Newticket from './components/new_ticket.vue';
+import Tickets from './components/tickets.vue';
 import {computed} from "vue";
 
 export default {
@@ -10,7 +12,9 @@ export default {
   components: {
     LoginComponent,
     NavBarFirstTime,
-    Onboarding
+    Onboarding,
+    Newticket,
+    Tickets
   }
 }
 </script>

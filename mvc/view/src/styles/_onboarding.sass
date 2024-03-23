@@ -17,6 +17,15 @@ html
 body
   margin: 0
 
+%checkbox-style
+  display: flex
+  justify-content: center
+  align-items: center // Changed from 'start' to 'center' for vertical centering
+  width: 1.5rem // Set a fixed width
+  height: 1.5rem // Set a fixed height to match the width for a square aspect ratio
+  cursor: pointer
+  margin: 1rem
+
 
 .wrapper2
   position: absolute
@@ -86,16 +95,15 @@ body
         margin: 0.5rem
 
         .checkbox
-          display: flex
-          justify-content: center
-          align-items: start
-          width: auto
-          height: auto
-          cursor: pointer
-          margin: 1rem
+          @extend %checkbox-style
           .checkbox_vec
             width: 1.5rem
             height: auto
+          .checkbox-checked
+            width: 1.5rem
+            height: auto
+            scale: 130%
+
 
         .text
           display: flex
@@ -103,7 +111,6 @@ body
           align-items: center
           flex-wrap: wrap
           padding: 0.3rem
-
 
     .finalize_checklist
       margin-top: 3rem

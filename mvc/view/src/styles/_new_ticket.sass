@@ -1,0 +1,155 @@
+
+@use "./colors.sass" as * //import all the variables from index.sass
+@use "./buttons.sass" as * //import all the variables from index.sass
+@use "./radius.sass" as * //import all the variables from index.sass
+@use "./fonts.sass" as * //import all the variables from index.sass
+@use "./navbar.sass" as *
+*,
+*::before,
+*::after
+  margin: 0
+  padding: 0
+  box-sizing: content-box
+
+html
+  box-sizing: border-box
+
+body
+  margin: 0
+
+=display_flex
+  display: flex
+  justify-content: center
+  align-items: center
+  flex-direction: column
+
+.newticket_container
+  +display_flex
+
+.newticket_window
+  +display_flex
+  flex-direction: column
+  justify-content: flex-start
+  align-items: center
+  background-color: $container_background_color
+  border: 0.1rem solid $field_border
+  border-radius: $radius_outer
+  box-sizing: border-box
+  max-width: calc(10*#{$onboarding_header_size})
+  width: 100%
+  height: auto
+  padding: 2rem
+  margin-top: 2rem
+
+.newticket_header
+  +display_flex
+  flex-direction: row
+  justify-content: space-between
+  width: 100%
+  margin-bottom: 2rem
+
+  h1
+    font-size: $header_fontsize
+    color: $x_in_nxp
+
+  .X
+    background: none
+    border: none
+    cursor: pointer
+
+.newticket_subject,
+.newticket_description
+  display: flex
+  justify-content: flex-start
+  align-items: flex-start
+  flex-direction: column
+  width: 100%
+  margin-bottom: 1rem
+
+  label
+    font-size: 1rem
+    color: $header-color
+    margin-bottom: 0.5rem
+
+  input,
+  textarea
+    border: 0.1rem solid $field_border
+    border-radius: $radius_inner
+    padding: 0.5rem
+    font-size: 1rem
+    color: $header-color
+    width: 97.5%
+    margin-bottom: 1rem
+
+
+textarea
+  height: 5rem
+  resize: vertical
+
+.choosing_fields
+  display: flex
+  justify-content: space-between
+  width: 100%
+
+
+.fields, .fields2
+  list-style: none
+  padding: 0
+  display: flex
+  align-self: flex-start
+  flex-direction: column
+
+  li
+    +display_flex
+    align-items: start
+    margin-bottom: 1.5rem
+
+
+    label
+      font-size: 1rem
+      color: $text_color
+      margin-bottom: 0.5rem
+
+    select
+      border: 0.1rem solid $field_border
+      border-radius: $radius_inner
+      padding: 0.5rem
+      font-size: 1rem
+      color: $header-color
+      background-color: $container_background_color
+      cursor: pointer
+      width: 16rem
+
+
+      &:focus
+        outline: none
+        border-color: $field_border_clicked
+
+  .add_attachment
+    display: flex
+    justify-content: flex-end
+    flex-direction: row
+    align-items: center
+    padding-left: 0.5rem
+    padding-right: 0.5rem
+    margin: 0
+    margin-top: 1.625rem
+    width: 8rem
+    height: 2.3125rem
+    border-radius: $radius_inner
+    border: 0.1rem solid $field_border
+    .text_in_attachment
+      color: $header-color
+      font: $font_text
+      font-size: $btn_fontsize
+      font-weight: bolder
+      margin-right: 0.25rem
+
+.finalize_ticket
+  .finalize_ticket_btn
+    width: 8rem
+    margin-top: 4rem
+    margin-bottom: 2rem
+    font-size: $btn_fontsize
+    font-weight: $btn_fontweight
+    padding: 0.5rem 4rem

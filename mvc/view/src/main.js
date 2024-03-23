@@ -5,10 +5,14 @@ import App from './App.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginComponent from './components/login.vue';
 import Onboarding from './components/onboarding.vue';
+import Newticket from './components/new_ticket.vue';
+import Tickets from './components/tickets.vue';
 
 const routes = [
     { path: '/', component: LoginComponent },
-    { path: '/onboarding', component: Onboarding }
+    { path: '/onboarding', component: Onboarding },
+    { path: '/new_ticket', component: Newticket },
+    { path: '/tickets', component: Tickets }
 ]
 
 const router = createRouter({

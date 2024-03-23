@@ -105,7 +105,7 @@ label {
   background-color: #FFFFFF;
 }
 
-.onboarding_nav {
+.nav_ {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -133,6 +133,23 @@ label {
   font-size: 0.875rem;
   color: #393e44;
 }
+#nav_items .logout-btn img {
+  display: flex;
+  align-items: center;
+  padding-top: 0.25rem;
+  color: #788ba5;
+  margin-right: 0.5rem;
+}
+#nav_items .wbi {
+  font-size: 0.675rem;
+  color: #788ba5;
+}
+#nav_items .user-info {
+  display: flex;
+  flex-direction: column;
+  margin-right: 1rem;
+  font-size: 0.875rem;
+}
 
 .user_picture img {
   height: auto;
@@ -145,29 +162,50 @@ label {
   margin-right: 0.5rem;
 }
 
-.user-info {
-  display: flex;
-  flex-direction: column;
-  margin-right: 1.5rem;
-}
-
-.wbi {
-  font-size: 0.675rem;
-  color: #788ba5;
-}
-
-.logout-btn img {
-  display: flex;
-  align-items: center;
-  height: 1.1rem;
-  padding-top: 0.25rem;
-  color: #788ba5;
-  margin-right: 0.5rem;
-}
-
 .nav-left, .nav-right {
   display: flex;
   align-items: center;
+}
+
+.archive_tab {
+  font-size: 1.165rem;
+  margin-right: 1.3rem;
+  text-decoration: none;
+  color: #393e44;
+}
+.archive_tab:hover {
+  color: #fca600;
+}
+
+.tickets_tab {
+  font-size: 1.165rem;
+  margin-right: 1.3rem;
+  text-decoration: none;
+  color: #393e44;
+}
+.tickets_tab:hover {
+  color: #fca600;
+}
+
+.search-container {
+  margin-right: 0.5rem;
+  display: flex;
+  justify-items: center;
+  justify-content: end;
+  align-items: center;
+}
+.search-container button {
+  position: fixed;
+  margin: 0;
+  margin-right: 0.4rem;
+  padding: 0;
+  margin-top: 0.15rem;
+  height: auto;
+  background: #FFFFFF;
+}
+.search-container button:hover {
+  background-color: #FFFFFF;
+  border-color: #FFFFFF;
 }
 
 *,
@@ -184,6 +222,16 @@ html {
 
 body {
   margin: 0;
+}
+
+.wrapper2 .onboarding_container .checklist .item .checkbox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+  margin: 1rem;
 }
 
 .wrapper2 {
@@ -252,18 +300,14 @@ body {
   display: flex;
   margin: 0.5rem;
 }
-.wrapper2 .onboarding_container .checklist .item .checkbox {
-  display: flex;
-  justify-content: center;
-  align-items: start;
-  width: auto;
-  height: auto;
-  cursor: pointer;
-  margin: 1rem;
-}
 .wrapper2 .onboarding_container .checklist .item .checkbox .checkbox_vec {
   width: 1.5rem;
   height: auto;
+}
+.wrapper2 .onboarding_container .checklist .item .checkbox .checkbox-checked {
+  width: 1.5rem;
+  height: auto;
+  scale: 130%;
 }
 .wrapper2 .onboarding_container .checklist .item .text {
   display: flex;
@@ -280,6 +324,172 @@ body {
   font-size: 1rem;
   font-weight: bold;
   padding: 0.5rem 8rem;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: content-box;
+}
+
+html {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.newticket_container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.newticket_window {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background-color: #FFFFFF;
+  border: 0.1rem solid #dadada;
+  border-radius: 10px;
+  box-sizing: border-box;
+  max-width: calc(10 * 4.6875rem);
+  width: 100%;
+  height: auto;
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.newticket_header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+.newticket_header h1 {
+  font-size: 2.1rem;
+  color: #0eafe0;
+}
+.newticket_header .X {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.newticket_subject,
+.newticket_description {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+.newticket_subject label,
+.newticket_description label {
+  font-size: 1rem;
+  color: #181e25;
+  margin-bottom: 0.5rem;
+}
+.newticket_subject input,
+.newticket_subject textarea,
+.newticket_description input,
+.newticket_description textarea {
+  border: 0.1rem solid #dadada;
+  border-radius: 5px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  color: #181e25;
+  width: 97.5%;
+  margin-bottom: 1rem;
+}
+
+textarea {
+  height: 5rem;
+  resize: vertical;
+}
+
+.choosing_fields {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.fields, .fields2 {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  align-self: flex-start;
+  flex-direction: column;
+}
+.fields li, .fields2 li {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  align-items: start;
+  margin-bottom: 1.5rem;
+}
+.fields li label, .fields2 li label {
+  font-size: 1rem;
+  color: #393e44;
+  margin-bottom: 0.5rem;
+}
+.fields li select, .fields2 li select {
+  border: 0.1rem solid #dadada;
+  border-radius: 5px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  color: #181e25;
+  background-color: #FFFFFF;
+  cursor: pointer;
+  width: 16rem;
+}
+.fields li select:focus, .fields2 li select:focus {
+  outline: none;
+  border-color: #393e44;
+}
+.fields .add_attachment, .fields2 .add_attachment {
+  display: flex;
+  justify-content: flex-end;
+  flex-direction: row;
+  align-items: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin: 0;
+  margin-top: 1.625rem;
+  width: 8rem;
+  height: 2.3125rem;
+  border-radius: 5px;
+  border: 0.1rem solid #dadada;
+}
+.fields .add_attachment .text_in_attachment, .fields2 .add_attachment .text_in_attachment {
+  color: #181e25;
+  font: sans-serif;
+  font-size: 1rem;
+  font-weight: bolder;
+  margin-right: 0.25rem;
+}
+
+.finalize_ticket .finalize_ticket_btn {
+  width: 8rem;
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0.5rem 4rem;
 }
 
 /*# sourceMappingURL=main.css.map */
