@@ -42,7 +42,7 @@ export default {
     async fetchTickets() {
       // Fetch tickets from the database and assign them to this.tickets
       this.tickets = [
-        { id: '61', title: 'Ticket 1', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
+        { id: '61', title: 'Ticket 1', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High', project: "Gendalf" },
         { id: '396731', title: 'Tictjuae69', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
         { id: '185658356', title: 'TickEJEJ369', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
         { id: '17617171', title: 'Ticket 3691', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },

@@ -25,6 +25,7 @@ body
 
 .newticket_container, .alltickets_container
   +display_flex
+  background-color: $background-color
 
 .newticket_window
   +display_flex
@@ -39,7 +40,8 @@ body
   width: 100%
   height: auto
   padding: 2rem
-  margin-top: 2rem
+  padding-bottom: 0
+
 
 .newticket_header, .alltickets_header
   +display_flex
@@ -148,9 +150,9 @@ textarea
       height: 1.5rem
 
 .finalize_ticket
-  .finalize_ticket_btn
+  button.finalize_ticket_btn
     width: 8rem
-    margin-top: 4rem
+    margin-top: 3rem
     margin-bottom: 2rem
     font-size: $btn_fontsize
     font-weight: $btn_fontweight

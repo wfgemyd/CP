@@ -1,86 +1,204 @@
-.extended-item
-  background: #FFFFFF
-  border-radius: 8px
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1)
-  padding: 20px
-  margin-top: 20px
 
+@use "./colors.sass" as * //import all the variables from index.sass
+@use "./buttons.sass" as * //import all the variables from index.sass
+@use "./radius.sass" as * //import all the variables from index.sass
+@use "./fonts.sass" as * //import all the variables from index.sass
+@use "./navbar.sass" as *
+@use "./tickets.sass" as *
 
-  .ticket-details
+*,
+*::before,
+*::after
+  margin: 0
+  padding: 0
+  box-sizing: content-box
+
+html
+  box-sizing: border-box
+  height: 100%
+
+body
+  margin: 0
+  height: 100%
+
+.extended_container
+  display: flex
+  flex-direction: column
+  width: 100%
+  border: 1px solid #ccc
+  padding: 0.5rem
+  margin-bottom: 8px
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
+  border-radius: $radius_outer
+  box-sizing: border-box
+
+  .extended-item
     display: flex
-    flex-direction: column
+    flex-direction: row
+    box-sizing: border-box
+    justify-content: space-evenly
+    .ticket-details
+      display: flex
+      flex-direction: column
+      justify-content: space-between
+      align-items: stretch
+      width: 100%
+      min-width: 27.4706875rem
+      border: 1px solid #ccc
+      padding: 0.5rem
+      margin-bottom: 8px
+      margin-left: 2rem
+      border-radius: $radius_outer
+      box-sizing: border-box
+
+    .ticket-summary
+      +display_flex_
+      flex-direction: column
+      align-items: center
+      justify-content: start
+      width: 100%
+      .ticket-info
+        display: flex
+        flex-direction: column
+        align-items: start
+
+        width: 100%
+        border: 1px solid #ccc
+        padding: 0.5rem
+        margin-bottom: 0.5rem
+        border-radius: $radius_outer
+        box-sizing: border-box
+        .ticket-row
+          display: flex
+          flex-direction: row
+          justify-content: space-between
+          width: 100%
 
 
-  .info-section
-    display: flex
-    justify-content: space-between
 
 
-  .info-block
-    background: #F8F8F8
-    border-radius: 8px
-    padding: 20px
-    margin-bottom: 20px
+      .requester-detail, .assignedto-detail
+        display: flex
+        flex-direction: column
+        width: 100%
+        border: 1px solid #ccc
+        padding: 0.5rem
+        margin-bottom: 8px
+        border-radius: $radius_outer
+        box-sizing: border-box
+      .label
+        font-weight: bold
+        color: #333333
+        margin-right: 0.5rem
+        margin-bottom: 0.5rem
 
 
-  .label
-    font-weight: bold
-    color: #333333
-    margin-right: 5px
+    .sender, .ticket-description
+      text-align: left
+      margin-bottom: 0.9rem
 
 
-  .ticket-conversation
-    background: #F8F8F8
-    border-radius: 8px
-    padding: 20px
-    margin-top: 20px
+
+    .receiver
+      text-align: right
+      margin-bottom: 0.9rem
 
 
-  .sender
-    text-align: right
+    .ticket-response
+      +display_flex_
+      flex-direction: column
+      margin-top: 1.1rem
+      padding: 1rem
+      textarea
+        width: 100%
+        border-radius: 0.5rem
+        padding: 0.5rem
+        border: 1px solid #ccc
+      // Unified variables for easy theme adjustments
+      $button-height: 1.3rem // Common height for both buttons
+      $button-bg-color: #007bff // Primary button color
+      $button-hover-bg-color: darken($button-bg-color, 10%) // Darker shade for hover state
+      $button-color: #ffffff // Text color
+      $button-hover-color: $button-color // Text color on hover remains the same
+      $button-padding: 0.5rem 1rem // Padding around the text and image
+      $button-border-radius: 0.5rem // Rounded corners for the button
+      $paperclip-size: 20px // Size of the paperclip image
+      $comment-button-bg-color: #28a745 // Success button color
+      $comment-button-hover-bg-color: darken($comment-button-bg-color, 10%) // Darker shade for hover state
+
+      // Common button styling
+      .button-common
+        height: $button-height
+        padding: $button-padding
+        border: none
+        border-radius: $button-border-radius
+        cursor: pointer
+        display: inline-flex
+        align-items: center
+        justify-content: center
+        text-transform: uppercase // Uppercase text for a more button-like appearance
+        font-weight: bold
+        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out
+        margin-top: 0.5rem
 
 
-  .receiver
-    text-align: left
+        // Hover effect
+        &:hover
+          color: $button-hover-color
+      .button_extended_container
+        display: flex
+        justify-content: end
+        width: 100%
+        // Specific styling for .add_attachment button
+        .add_attachment
+          @extend .button-common
+          background-color: $button-bg-color
+          color: $button-color
+          gap: 0.5rem // Space between text and image
+          margin-right: 2rem
 
-  .ticket-response
-    margin-top: 20px
+          &:hover
+            background-color: $button-hover-bg-color
 
+          // Paperclip image styling
+          .paperclip
+            width: $paperclip-size
+            height: auto // Maintain aspect ratio
 
-  textarea
-    width: 100%
-    border-radius: 8px
-    margin-top: 20px
-    padding: 10px
-    border: 1px solid #CCCCCC
+        // Specific styling for .add_comment button
+        .add_comment
+          @extend .button-common
+          background-color: $comment-button-bg-color
+          color: $button-color
+          // This button is a single element, no gap needed
 
-  .X
-    cursor: pointer
-    margin: 0
-    padding: 0
-    border: none
-    background: none
+          &:hover
+            background-color: $comment-button-hover-bg-color
 
-    &:hover
-      border: none
-      background: none
-      scale: 110%
-    &:active
-      border: none
-      background: none
-      scale: 120%
-  button
-    background-color: #4F46E5
-    color: white
-    padding: 10px 20px
-    border-radius: 8px
-    border: none
-    margin-top: 10px
-    cursor: pointer
 
   .timestamp
-    /* ... existing styles ... */
     font-size: 0.75rem
     color: #999
 
 
+#extended_subject_item
+  margin-left: 0.5rem
+
+.X
+  cursor: pointer
+  margin: 0
+  padding: 0
+  border: none
+  background: none
+  justify-content: center
+  align-items: start
+  align-content: start
+
+  &:hover
+    border: none
+    background: none
+    scale: 110%
+  &:active
+    border: none
+    background: none
+    scale: 120%

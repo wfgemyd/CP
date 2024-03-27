@@ -30,28 +30,60 @@ function submitResponse() {
 </script>
 
 <template>
-  <div class="extended-item">
-    <button class="X" @click.stop="$emit('closeExtendedView')"><img src="../assets/Plus.png" alt="X"></button>
-    <div class="ticket-summary">
-      <h3>{{ ticket.subject || 'Placeholder Title' }}</h3>
-      <div class="ticket-info">
-        <p><span class="label">Ticket ID:</span> {{ ticket.id }}</p>
-        <p><span class="label">Created:</span> {{ ticket.createdOn }}</p>
-        <p><span class="label">Last Update:</span> {{ ticket.updatedOn }}</p>
-        <p><span class="label">Closed On:</span> {{ ticket.closedOn }}</p>
-        <p><span class="label">Priority:</span> {{ ticket.priority }}</p>
-        <p><span class="label">Status:</span> {{ ticket.status }}</p>
-        <p><span class="label">Project:</span> {{ ticket.project }}</p>
-        <p><span class="label">Assigned to:</span> {{ ticket.assignedTo }}</p>
-      </div>
+  <div class="extended_container">
+    <div class ="alltickets_item_upperrow">
+      <h3 id="extended_subject_item">{{ ticket.subject || 'Placeholder Title' }}</h3>
+      <button class="X" @click.stop="$emit('closeExtendedView')"><img src="../assets/Plus.png" alt="X"></button>
     </div>
+    <div class="extended-item">
+
+      <div class="ticket-summary">
+
+        <div class="ticket-info">
+          <div class="ticket-row">
+            <span class="label">Ticket ID:</span>
+            <div class="content">#{{ ticket.id }}</div>
+          </div>
+          <div class="ticket-row">
+            <span class="label">Created:</span>
+            <div class="content">{{ ticket.createdOn }}</div>
+          </div>
+          <div class="ticket-row">
+            <span class="label">Last Update:</span>
+            <div class="content">{{ ticket.updatedOn }}</div>
+          </div>
+          <div class="ticket-row">
+            <span class="label">Closed On:</span>
+            <div class="content">{{ ticket.closedOn }}</div>
+          </div>
+          <div class="ticket-row">
+            <span class="label">Priority:</span>
+            <div class="content">{{ ticket.priority }}</div>
+          </div>
+          <div class="ticket-row">
+            <span class="label">Status:</span>
+            <div class="content">{{ ticket.status }}</div>
+          </div>
+          <div class="ticket-row">
+            <span class="label">Project:</span>
+            <div class="content">{{ ticket.project }}</div>
+          </div>
+        </div>
+        <div class="assignedto-detail">
+          <span class="label">Assigned to:</span>
+          <p>{{ ticket.assignedTo || "Super Manager Patron" }}</p>
+        </div>
+        <div class="requester-detail">
+          <span class="label">Requester Detail:</span>
+          <p>{{ ticket.requester || "Don Patron" }}</p>
+        </div>
+      </div>
 
     <div class="ticket-details">
-      <div class="requester-detail">
-        <p><span class="label">Requester Detail:</span> {{ ticket.requester }}</p>
-      </div>
+
       <div class="ticket-description">
-        <p><span class="label">Description:</span> {{ ticket.description || 'Placeholder Description' }}</p>
+        <p><span class="label"></span> {{ ticket.description || 'Placeholder Description' }}</p>
+        <span class="timestamp">{{ ticket.createdOn }}</span>
       </div>
       <div class="ticket-chat">
         <div v-for="message in chatMessages" :key="message.id" class="chat-message" :class="{ 'sender': message.isSender, 'receiver': !message.isSender }">
@@ -61,10 +93,14 @@ function submitResponse() {
       </div>
       <div class="ticket-response">
         <textarea v-model="responseMessage" placeholder="Write your response for the issue"></textarea>
-        <button @click="submitResponse">Send</button>
+        <div class="button_extended_container">
+          <button class="add_attachment"> Attachment <img class="paperclip" src = "../assets/Paperclip.png" alt="add attachments"> </button>
+
+          <button class="add_comment" @click="submitResponse">Comment</button>
+        </div>
       </div>
     </div>
-
+  </div>
   </div>
 </template>
 
