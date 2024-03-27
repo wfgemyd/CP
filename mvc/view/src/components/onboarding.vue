@@ -10,8 +10,8 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
-const goToNewticket = () => {
-  router.push('/new_ticket');
+const goTotickets = () => {
+  router.push('/tickets');
 };
 
 </script>
@@ -88,7 +88,7 @@ export default {
         </div>
 
         <div class="finalize_checklist">
-          <button class="finalize_btn" @click="goToNewticket">Submit</button>
+          <button class="finalize_btn" @click="goTotickets">Submit</button>
         </div>
 
       </div>

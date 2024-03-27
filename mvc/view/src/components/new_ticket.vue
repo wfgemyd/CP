@@ -44,7 +44,7 @@ const ticketDescription = ref('');
 
     <div class="newticket_header">
       <h1>New ticket</h1>
-      <button class="X" ><img src="../assets/Plus.png" alt="X"></button>
+      <button class="X" ><img @click="goTotickets" src="../assets/Plus.png" alt="X"></button>
     </div>
     <div class="newticket_subject">
       <label for="subject">Subject</label>

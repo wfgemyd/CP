@@ -23,7 +23,7 @@ body
   align-items: center
   flex-direction: column
 
-.newticket_container
+.newticket_container, .alltickets_container
   +display_flex
 
 .newticket_window
@@ -41,7 +41,7 @@ body
   padding: 2rem
   margin-top: 2rem
 
-.newticket_header
+.newticket_header, .alltickets_header
   +display_flex
   flex-direction: row
   justify-content: space-between
@@ -143,7 +143,9 @@ textarea
       font: $font_text
       font-size: $btn_fontsize
       font-weight: bolder
-      margin-right: 0.25rem
+      margin-right: 0.5rem
+    .paperclip
+      height: 1.5rem
 
 .finalize_ticket
   .finalize_ticket_btn

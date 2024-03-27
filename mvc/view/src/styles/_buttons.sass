@@ -3,6 +3,7 @@
 @use './fonts.sass' as * //import all the variables from index.sass
 @use './login.sass' as l //import all the variables from index.sass
 
+
 %btn
   border: 0.125rem solid $container_background_color
   border-radius: $radius_outer
@@ -27,8 +28,8 @@
     border-color: $p_in_nxp
     color: $container_background_color
 
-
-button
-  @extend %btn
+.login_btn, .alltickets_header, .finalize_ticket, .finalize_checklist, .search-container, .alltickets_search-container
+  button
+    @extend %btn
 
 

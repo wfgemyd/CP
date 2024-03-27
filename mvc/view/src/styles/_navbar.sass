@@ -12,6 +12,7 @@
 
 
 .navbar-container
+  position: sticky
   display: flex
   justify-content: space-between
   align-items: flex-end
@@ -97,7 +98,7 @@
   color: $text-color
 
 
-.search-container
+.search-container, .alltickets_search-container
   margin-right: 0.5rem
   display: flex
   justify-items: center
@@ -105,7 +106,7 @@
   align-items: center
 
   button
-    position: fixed
+    position: absolute
     margin: 0
     margin-right: 0.4rem
     padding: 0

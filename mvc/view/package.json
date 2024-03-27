@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vue/test-utils": "^2.4.5",
     "volar-service-vetur": "^0.0.34",
     "vue": "^3.4.21",
     "vue-router": "^4.0.13"
