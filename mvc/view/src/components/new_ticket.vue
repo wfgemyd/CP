@@ -47,60 +47,91 @@ const ticketDescription = ref('');
       <button class="X" ><img @click="goTotickets" src="../assets/Plus.png" alt="X"></button>
     </div>
     <div class="newticket_subject">
-      <label for="subject">Subject</label>
+      <div class="label-container">
+      <label for="subject">Subject:</label>
+      <div class="circle"><p class="question-mark">?</p></div></div>
       <input type="text" id="subject" name="subject" v-model="ticketSubject" placeholder="Enter the subject of the ticket" required>
     </div>
     <div class="newticket_description">
-      <label for="description">Description</label>
+      <div class="label-container">
+      <label for="description">Description:</label>
+      <div class="circle"><p class="question-mark">?</p></div></div>
       <textarea id="description" name="description" v-model="ticketDescription" placeholder="Enter the description of the ticket" required></textarea>
     </div>
     <div class="choosing_fields">
       <ul class="fields">
         <li>
-          <label for="priority">Priority</label>
+          <div class="label-container">
+          <label for="WBI">WBI: </label>
+          <div class="circle"><p class="question-mark">?</p></div></div>
+
+          <select id="WBI" name="WBI" v-model="selectedWBI">
+            <option v-for="(label, value) in ticket_WBI" :key="value" :value="value">{{ label }}</option>
+          </select>
+        </li>
+        <li>
+          <div class="label-container">
+          <label for="priority">Priority:</label>
+          <div class="circle"><p class="question-mark">?</p></div></div>
+
           <select id="priority" name="priority" v-model="selectedPriority" >
             <option v-for="(label, value) in ticket_priority" :key="value" :value="value">{{ label }}</option>
           </select>
         </li>
         <li>
-          <label for="status">Status</label>
-          <select id="status" name="status" v-model="selectedStatus">
-            <option v-for="(label, value) in ticket_status" :key="value" :value="value">{{ label }}</option>
+          <div class="label-container">
+          <label for="employment_status">Employment status:</label>
+          <div class="circle"><p class="question-mark">?</p></div></div>
+
+          <select id="employment_status" name="employment_status" v-model="selectedEmploymentStatus">
+            <option v-for="(label, value) in employment_status" :key="value" :value="value">{{ label }}</option>
           </select>
         </li>
         <li>
-          <label for="category">Category</label>
+          <div class="label-container">
+          <label for="manager">User's Direct Manager:</label>
+          <div class="circle"><p class="question-mark">?</p></div></div>
+
+          <select id="manager" name="manager" v-model="selectedManager">
+            <option v-for="(label, value) in ticket_manager" :key="value" :value="value">{{ label }}</option>
+          </select>
+        </li>
+      </ul>
+      <ul class="fields2">
+
+        <li>
+          <div class="label-container">
+          <label for="category">Project's Name:</label>
+          <div class="circle"><p class="question-mark">?</p></div></div>
+
           <select id="category" name="category" v-model="selectedCategory">
             <option v-for="(label, value) in required_category" :key="value" :value="value">{{ label }}</option>
           </select>
         </li>
         <li>
-          <label for="WBI">WBI</label>
-          <select id="WBI" name="WBI" v-model="selectedWBI">
-            <option v-for="(label, value) in ticket_WBI" :key="value" :value="value">{{ label }}</option>
-          </select>
-        </li>
-      </ul>
-      <ul class="fields2">
-        <li>
-          <label for="manager">Manager</label>
-          <select id="manager" name="manager" v-model="selectedManager">
-            <option v-for="(label, value) in ticket_manager" :key="value" :value="value">{{ label }}</option>
+          <div class="label-container">
+          <label for="permission_required">Permission Required:</label>
+          <div class="circle"><p class="question-mark">?</p></div></div>
+
+          <select id="permission_required" name="selectedPermissionRequired" v-model="selectedPermissionRequired">
+            <option v-for="(label, value) in permission_required" :key="value" :value="value">{{ label }}</option>
           </select>
         </li>
         <li>
-          <label for="onboarding_was_completed">Onboarding was completed</label>
-          <select id="onboarding_was_completed" name="onboarding_was_completed" v-model="selectedOnboarding">
-            <option v-for="(label, value) in onboarding_was_completed" :key="value" :value="value">{{ label }}</option>
+          <div class="label-container">
+          <label for="user_role">User's Role:</label>
+          <div class="circle"><p class="question-mark">?</p></div></div>
+
+          <select id="user_role" name="selectedUserRole" v-model="selectedUserRole">
+            <option v-for="(label, value) in user_role" :key="value" :value="value">{{ label }}</option>
           </select>
         </li>
-        <li>
-          <label for="employment_status">Employment status</label>
-          <select id="employment_status" name="employment_status" v-model="selectedEmploymentStatus">
-            <option v-for="(label, value) in employment_status" :key="value" :value="value">{{ label }}</option>
-          </select>
+
+        <li class="add_attachment">
+          <div class="button_extended_container">
+            <button class="add_attachment">Attachment <img class="paperclip" src="../assets/Paperclip.png" alt="add attachments"></button>
+          </div>
         </li>
-        <li class="add_attachment"> <h4 class="text_in_attachment">Attachment</h4> <img class="paperclip" src = "../assets/Paperclip.png" alt="add attachments"> </li>
       </ul>
       </div>
       <div class="finalize_ticket">
@@ -115,6 +146,7 @@ const ticketDescription = ref('');
 <style scoped lang="sass">
   @use '../styles/_colors.sass' as *
   @use '../styles/_navbar.sass' as *
+  @use '../styles/extended_item_tickets.sass' as *
   :deep(.tickets_tab)
     color: $n_in_nxp
     text-decoration: underline
@@ -135,4 +167,24 @@ const ticketDescription = ref('');
       border: none
       background: none
       scale: 120%
+
+  .label-container
+    display: flex
+    justify-content: center
+    align-items: start
+    .circle
+      width: 0.8rem
+      height: 0.8rem
+      background-color: #00BFFF
+      border-radius: 50% //makes it a circle
+      display: flex //centers the text
+      justify-content: center //centers the text
+      align-items: center //centers the text
+      margin-top: 0.15rem
+      margin-left: 0.2rem
+
+      .question-mark
+        font-size: 0.7rem
+        font-weight: bold
+        color: white
 </style>

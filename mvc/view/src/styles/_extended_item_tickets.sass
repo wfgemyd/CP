@@ -114,38 +114,10 @@ body
         border-radius: 0.5rem
         padding: 0.5rem
         border: 1px solid #ccc
-      // Unified variables for easy theme adjustments
-      $button-height: 1.3rem // Common height for both buttons
-      $button-bg-color: #007bff // Primary button color
-      $button-hover-bg-color: darken($button-bg-color, 10%) // Darker shade for hover state
-      $button-color: #ffffff // Text color
-      $button-hover-color: $button-color // Text color on hover remains the same
-      $button-padding: 0.5rem 1rem // Padding around the text and image
-      $button-border-radius: 0.5rem // Rounded corners for the button
-      $paperclip-size: 20px // Size of the paperclip image
-      $comment-button-bg-color: #28a745 // Success button color
-      $comment-button-hover-bg-color: darken($comment-button-bg-color, 10%) // Darker shade for hover state
-
-      // Common button styling
-      .button-common
-        height: $button-height
-        padding: $button-padding
-        border: none
-        border-radius: $button-border-radius
-        cursor: pointer
-        display: inline-flex
-        align-items: center
-        justify-content: center
-        text-transform: uppercase // Uppercase text for a more button-like appearance
-        font-weight: bold
-        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out
-        margin-top: 0.5rem
 
 
-        // Hover effect
-        &:hover
-          color: $button-hover-color
-      .button_extended_container
+
+      .button_extended_container, .button_extended_container_
         display: flex
         justify-content: end
         width: 100%

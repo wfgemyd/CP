@@ -4,6 +4,7 @@
 @use "./radius.sass" as * //import all the variables from index.sass
 @use "./fonts.sass" as * //import all the variables from index.sass
 @use "./navbar.sass" as *
+
 *,
 *::before,
 *::after
@@ -107,6 +108,7 @@ textarea
     margin-bottom: 1.5rem
 
 
+
     label
       font-size: 1rem
       color: $text_color
@@ -127,27 +129,32 @@ textarea
         outline: none
         border-color: $field_border_clicked
 
-  .add_attachment
-    display: flex
-    justify-content: flex-end
-    flex-direction: row
-    align-items: center
-    padding-left: 0.5rem
-    padding-right: 0.5rem
-    margin: 0
-    margin-top: 1.625rem
-    width: 8rem
-    height: 2.3125rem
-    border-radius: $radius_inner
-    border: 0.1rem solid $field_border
-    .text_in_attachment
-      color: $header-color
-      font: $font_text
-      font-size: $btn_fontsize
-      font-weight: bolder
-      margin-right: 0.5rem
-    .paperclip
-      height: 1.5rem
+    // Apply common button styling to .add_attachment
+    .add_attachment
+      @extend .button-common
+      background-color: $button-bg-color
+      color: $button-color
+      gap: 0.5rem // Space between text and image
+      justify-content: flex-end
+      width: 8rem
+      margin-right: 2rem
+      margin-top: 1.625rem
+      border-radius: $radius_outer
+
+      &:hover
+        background-color: $button-hover-bg-color
+
+      // Paperclip image styling
+      .paperclip
+        width: $paperclip-size
+        height: auto // Maintain aspect ratio
+
+      // Text styling inside the button
+      .text_in_attachment
+        color: $button-color
+        font-weight: bold
+        margin-right: 0.5rem
+
 
 .finalize_ticket
   button.finalize_ticket_btn

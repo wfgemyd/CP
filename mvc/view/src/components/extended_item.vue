@@ -68,6 +68,14 @@ function submitResponse() {
             <span class="label">Project:</span>
             <div class="content">{{ ticket.project }}</div>
           </div>
+          <div class="ticket-row">
+            <span class="label">Role:</span>
+            <div class="content">{{ ticket.role }}</div>
+          </div>
+          <div class="ticket-row">
+            <span class="label">Employment Status:</span>
+            <div class="content">{{ ticket.EmploymentStatus || "Contractor" }}</div>
+          </div>
         </div>
         <div class="assignedto-detail">
           <span class="label">Assigned to:</span>
@@ -106,5 +114,6 @@ function submitResponse() {
 
 <style scoped lang="sass">
 @import '../styles/main.sass'
+
 
 </style>
