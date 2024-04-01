@@ -47,22 +47,29 @@ function toggleModifyColumnsMenu() {
     <Navbar/>
     <div class="tracker">
       <div class="title">
-        <h1>Tracker Search Results ({{ archiveItems.length }} Items)</h1>
-        <div class="buttons">
-          <button class="btn">New Search</button>
-          <button class="btn">Refine Search</button>
-          <button class="btn export">Export</button>
+        <div class="archive_header">
+        <h1>Archive</h1>
+        </div>
+        <div class="lower_row_archive">
+          <h1>Tracker Search Results ({{ archiveItems.length }} Items)</h1>
+          <div class="buttons">
+            <button class="btn">Filter by</button>
+            <div class="controls">
+              <button class="btn" @click="toggleModifyColumnsMenu">Modify Columns</button>
+              <div v-if="modifyColumnsMenuVisible" class="modify-columns-menu">
+                <div v-for="column in allColumns" :key="column">
+                  <input type="checkbox" :id="column" :checked="columns.find(c => c.name === column && c.visible)" @change="toggleColumnVisibility(column)">
+                  <label :for="column">{{ column }}</label>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn export">Export</button>
+          </div>
         </div>
       </div>
-      <div class="controls">
-        <button class="btn" @click="toggleModifyColumnsMenu">Modify Columns</button>
-      </div>
-      <div v-if="modifyColumnsMenuVisible" class="modify-columns-menu">
-        <div v-for="column in allColumns" :key="column">
-          <input type="checkbox" :id="column" :checked="columns.find(c => c.name === column && c.visible)" @change="toggleColumnVisibility(column)">
-          <label :for="column">{{ column }}</label>
-        </div>
-      </div>
+
+
       <table :class="{ 'table-lower': showMenu }">
         <thead>
         <tr>
@@ -91,12 +98,15 @@ function toggleModifyColumnsMenu() {
 <style scoped lang="sass">
 @use '../styles/_colors.sass' as *
 @use '../styles/_navbar.sass' as *
+@use '../styles/_fonts.sass' as *
 :deep(.archive_tab)
   color: $n_in_nxp
   text-decoration: underline
   text-underline-offset: 3px
   text-decoration-thickness: 3px
 
+.controls
+  position: relative
 
 .modify-columns-menu
   position: absolute
@@ -106,9 +116,9 @@ function toggleModifyColumnsMenu() {
   border-radius: 5px
   box-shadow: 0 2px 5px rgba(0,0,0,0.2)
   z-index: 100
-  /* Position the menu below the "Modify Columns" button */
-  top: 100% /* Adjust as needed */
-  left: 0 /* Adjust as needed */
+  top: 110% // This positions the top of the menu right at the bottom of the button
+  left: -15% // Aligns the menu to the left edge of the button
+  width: max-content // Ensures the menu width is based on its content
 
 
 $font-family-sarabun: 'Sarabun', sans-serif
@@ -130,21 +140,33 @@ $text-align-center: center
 
 .tracker
   font-family: $font-family-sarabun
-  background: $background-color
+  background: $container_background_color
   margin: 1rem
   border-radius: $border-radius
+  height: auto
+  padding: 2rem
+  margin-top: 2rem
 
   .title
-    display: $flex-display
-    justify-content: space-between
-    align-items: center
     margin-bottom: 1rem
+    margin-top: 1rem
+    .archive_header
+      display: $flex-display
+      flex-direction: row
+      justify-content: start
+      align-items: center
+      margin-bottom: 1rem
+      h1
+        font-size: $header_fontsize + 1rem
+        color: $x_in_nxp
 
-    h1
-      font-family: $font-family-alef
-      font-size: 1.25rem
-      font-weight: $font-weight-bold
-      margin: $margin-zero
+    .lower_row_archive
+      display: $flex-display
+      flex-direction: row
+      justify-content: space-between
+      h1
+        font-size: $header_fontsize - 0.5rem
+        color: $header-color
 
   .buttons, .controls
     display: $flex-display
@@ -158,6 +180,7 @@ $text-align-center: center
     border-radius: $border-radius
     width: $width-auto
     display: $inline-display
+    font-weight: bold
 
     &.export
       background-color: $export-button-background-color
@@ -168,7 +191,7 @@ $text-align-center: center
   table
     width: 100%
     border-collapse: collapse
-    margin-top: 1rem
+    margin-top: 2rem
     border-radius: $border-radius
 
     thead

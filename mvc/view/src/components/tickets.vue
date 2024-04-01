@@ -22,11 +22,15 @@ export default {
   data() {
     return {
       tickets: [], // This will be populated with data fetched from the database
-      expandedTicketId: null
+      expandedTicketId: null,
+      selectedStatus: 'Open',
     }
   },
   mounted() {
     this.fetchTickets();
+    this.fetchTickets().then(() => {
+      this.filterTickets(this.selectedStatus);
+    });
   },
   methods: {
     closeExtendedView(ticketId) {
@@ -41,16 +45,44 @@ export default {
       },
     async fetchTickets() {
       // Fetch tickets from the database and assign them to this.tickets
-      this.tickets = [
+      this.originalTickets  = [
         { id: '61', title: 'Ticket 1', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High', project: "Gendalf" },
-        { id: '396731', title: 'Tictjuae69', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
+        { id: '396731', title: 'Tictjuae69', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-04-01', status: 'Closed', priority: 'High' },
         { id: '185658356', title: 'TickEJEJ369', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
-        { id: '17617171', title: 'Ticket 3691', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
+        { id: '17617171', title: 'Ticket 3691', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Verifying', priority: 'High' },
         { id: '12376127', title: 'Tickwyw96', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
 
-        // Add more mock ticket objects as needed
       ];
-    }
+      //const response = await fetch('/api/tickets');
+      //const jsonTickets = await response.json();
+      //this.originalTickets = jsonTickets;
+      //this.tickets = [...this.originalTickets];
+
+      this.tickets = [...this.originalTickets]; //copy
+    },
+    filterTickets(status) {
+      this.selectedStatus = status;
+
+      if (status === 'All') {
+        this.tickets = [...this.originalTickets];
+        return;
+      }
+
+      this.tickets = this.originalTickets.filter(ticket => {
+        if (status === 'Closed') {
+          // Assuming you want to check if the ticket was closed today
+          let today = new Date().toISOString().slice(0, 10); //for future use
+
+          return ticket.status === 'Closed' && ticket.closedOn === '2024-04-01';
+        }
+        if (status === 'Open') {
+          return ticket.status === 'Open';
+        }
+        if (status === 'Verifying') {
+          return ticket.status === 'Verifying';
+        }
+      });
+    },
   }
 };
 
@@ -67,9 +99,18 @@ export default {
         </div>
         <div class="alltickets_navbar">
           <div class="ticket_status_view_options">
-            <button class="open_tickets">Open Tickets</button>
-            <button class="closed_tickets">Closed Tickets</button>
-            <button class="all_tickets">All Tickets</button>
+            <button
+                class="open_tickets"
+                :class="{ selected: selectedStatus === 'Open', unselected: selectedStatus !== 'Open' }"
+                @click="filterTickets('Open')">Open Tickets</button>
+            <button
+                class="closed_today_tickets"
+                :class="{ selected: selectedStatus === 'Closed', unselected: selectedStatus !== 'Closed' }"
+                @click="filterTickets('Closed')">Closed Tickets</button>
+            <button
+                class="vetifying"
+                :class="{ selected: selectedStatus === 'Verifying', unselected: selectedStatus !== 'Verifying' }"
+                @click="filterTickets('Verifying')">Verifying Tickets</button>
           </div>
           <div class="ticket_srch_filter_options">
             <div class="alltickets_search-container">

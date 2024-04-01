@@ -387,6 +387,7 @@ body {
   height: auto;
   padding: 2rem;
   padding-bottom: 0;
+  margin-bottom: 2rem;
 }
 
 .newticket_header, .alltickets_header {
@@ -572,6 +573,7 @@ body {
   width: auto;
   height: auto;
   margin-bottom: 2rem;
+  width: 46.25rem;
 }
 .alltickets_navbar .ticket_status_view_options {
   display: flex;
@@ -580,13 +582,49 @@ body {
   width: auto;
   height: auto;
 }
-.alltickets_navbar .ticket_status_view_options .open_tickets, .alltickets_navbar .ticket_status_view_options .closed_tickets, .alltickets_navbar .ticket_status_view_options .all_tickets {
+.alltickets_navbar .ticket_status_view_options .open_tickets {
   cursor: pointer;
   margin-right: 1.5rem;
   background: none;
-  color: #181e25;
-  font-size: 1.2rem;
   border: none;
+}
+.alltickets_navbar .ticket_status_view_options .open_tickets.selected {
+  color: #181e25;
+  font-size: 1.5rem;
+}
+.alltickets_navbar .ticket_status_view_options .open_tickets.unselected {
+  color: #393e44;
+  font-size: 1.1rem;
+}
+.alltickets_navbar .ticket_status_view_options .closed_today_tickets {
+  cursor: pointer;
+  margin-right: 1.5rem;
+  background: none;
+  border: none;
+}
+.alltickets_navbar .ticket_status_view_options .closed_today_tickets.selected {
+  color: #181e25;
+  text-underline: #fca600;
+  font-size: 1.5rem;
+}
+.alltickets_navbar .ticket_status_view_options .closed_today_tickets.unselected {
+  color: #393e44;
+  font-size: 1.1rem;
+}
+.alltickets_navbar .ticket_status_view_options .vetifying {
+  cursor: pointer;
+  margin-right: 1.5rem;
+  background: none;
+  border: none;
+}
+.alltickets_navbar .ticket_status_view_options .vetifying.selected {
+  color: #181e25;
+  text-underline: #fca600;
+  font-size: 1.5rem;
+}
+.alltickets_navbar .ticket_status_view_options .vetifying.unselected {
+  color: #393e44;
+  font-size: 1.1rem;
 }
 .alltickets_navbar div.ticket_srch_filter_options {
   display: flex;
@@ -604,13 +642,14 @@ body {
 .alltickets_item {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: 46.25rem;
   border: 1px solid #ccc;
   padding: 0.5rem;
   margin-bottom: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   box-sizing: border-box;
+  max-width: 60rem;
 }
 
 .alltickets_item_upperrow, .alltickets_item_lowerrow {
@@ -650,7 +689,7 @@ body {
 }
 
 #created_on, #updated_on, #closed_on, #status_, #priority_ {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 #created_on .label, #updated_on .label, #closed_on .label, #status_ .label, #priority_ .label {
   color: #7e7e7e;
@@ -678,7 +717,7 @@ body {
 .extended_container {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: 46.25rem;
   border: 1px solid #ccc;
   padding: 0.5rem;
   margin-bottom: 8px;
