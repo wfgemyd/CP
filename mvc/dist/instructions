@@ -1,2 +1,3 @@
 first step: go to dist folder.
-step two: npm run preview in administrator mode from any console (e.g. CMD)
+step two: npm install
+step three: npm run preview in administrator mode from any console (e.g. CMD)
