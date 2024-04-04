@@ -32,7 +32,7 @@ function submitResponse() {
 <template>
   <div class="extended_container">
     <div class ="alltickets_item_upperrow">
-      <h3 id="extended_subject_item">{{ ticket.subject || 'Placeholder Title' }}</h3>
+      <h3 id="extended_subject_item">{{ ticket.title || 'Placeholder Title' }}</h3>
       <button class="X" @click.stop="$emit('closeExtendedView')"><img src="../assets/Plus.png" alt="X"></button>
     </div>
     <div class="extended-item">
@@ -70,7 +70,7 @@ function submitResponse() {
           </div>
           <div class="ticket-row">
             <span class="label">Role:</span>
-            <div class="content">{{ ticket.role }}</div>
+            <div class="content">{{ ticket.role || "Developer"}}</div>
           </div>
           <div class="ticket-row">
             <span class="label">Employment Status:</span>
