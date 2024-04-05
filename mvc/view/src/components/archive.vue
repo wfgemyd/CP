@@ -356,7 +356,7 @@ export default {
     </div>
     </div>
     <div v-if="expandedItemId" class="extended-item-container">
-      <extended-item :ticket="archiveItems.find(ticket => ticket.id === expandedItemId)" @closeExtendedView="closeExtendedView" />
+      <extended-item :ticket="archiveItems.find(ticket => ticket.id === expandedItemId)" :isArchive="true" @closeExtendedView="closeExtendedView" />
     </div>
   </div>
 </template>

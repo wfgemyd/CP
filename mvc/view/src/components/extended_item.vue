@@ -2,7 +2,11 @@
 import { ref } from 'vue';
 
 const props = defineProps({
-  ticket: Object
+  ticket: Object,
+  isArchive: {
+    type: Boolean,
+    default: false
+  }
 });
 
 const chatMessages = ref([
@@ -28,13 +32,50 @@ function submitResponse() {
   }
 }
 </script>
+<script>
+export default {
+  props: {
+    ticket: Object
+  },
+  data() {
+    return {
+      isEditing: false,
+      chatMessages: [
+        { id: 1, content: "We are checking if the slot is open", isSender: false, timestamp: "Today, 11:15 PM" },
+        { id: 2, content: "Okay, keep me updated", isSender: true, timestamp: "Today, 11:30 PM" },
+        { id: 3, content: "need access to gandalf", isSender: true, timestamp: "Today, 11:35 PM" }
+      ],
+      responseMessage: ''
+    }
+  },
+  methods: {
+    toggleEditing() {
+      this.isEditing = !this.isEditing;
+    },
+    submitResponse() {
+      if (this.responseMessage.trim() !== '') {
+        const newMessage = {
+          id: this.chatMessages.length + 1,
+          content: this.responseMessage,
+          isSender: true,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        this.chatMessages.push(newMessage);
+        this.responseMessage = '';
+      }
+    }
+  }
+}
+</script>
 
 <template>
   <div class="extended_container">
-    <div class ="alltickets_item_upperrow">
+    <div class="alltickets_item_upperrow">
       <h3 id="extended_subject_item">{{ ticket.title || 'Placeholder Title' }}</h3>
+      <button v-if="!isArchive" class="edit-button" @click="toggleEditing">{{ isEditing ? 'Save' : 'Edit' }}</button>
       <button class="X" @click.stop="$emit('closeExtendedView')"><img src="../assets/Plus.png" alt="X"></button>
     </div>
+
     <div class="extended-item">
 
       <div class="ticket-summary">
@@ -58,28 +99,34 @@ function submitResponse() {
           </div>
           <div class="ticket-row">
             <span class="label">Priority:</span>
-            <div class="content">{{ ticket.priority }}</div>
+            <div v-if="isArchive || !isEditing" class="content">{{ ticket.priority }}</div>
+            <input v-else v-model="ticket.priority" />
           </div>
           <div class="ticket-row">
             <span class="label">Status:</span>
-            <div class="content">{{ ticket.status }}</div>
+            <div v-if="isArchive || !isEditing" class="content">{{ ticket.status }}</div>
+            <input v-else v-model="ticket.status" />
           </div>
           <div class="ticket-row">
             <span class="label">Project:</span>
-            <div class="content">{{ ticket.project }}</div>
+            <div  v-if="isArchive || !isEditing" class="content">{{ ticket.project }}</div>
+            <input v-else v-model="ticket.project" />
           </div>
           <div class="ticket-row">
             <span class="label">Role:</span>
-            <div class="content">{{ ticket.role || "Developer"}}</div>
+            <div  v-if="isArchive || !isEditing" class="content">{{ ticket.role || "Developer" }}</div>
+            <input v-else v-model="ticket.role" />
           </div>
           <div class="ticket-row">
             <span class="label">Employment Status:</span>
-            <div class="content">{{ ticket.EmploymentStatus || "Contractor" }}</div>
+            <div  v-if="isArchive || !isEditing" class="content">{{ ticket.employmentStatus || "Contractor" }}</div>
+            <input v-else v-model="ticket.employmentStatus" />
           </div>
         </div>
         <div class="assignedto-detail">
           <span class="label">Assigned to:</span>
-          <p>{{ ticket.assignedTo || "Super Manager Patron" }}</p>
+          <div  v-if="isArchive || !isEditing" class="content">{{ ticket.assignedTo || "Super Manager Patron" }}</div>
+          <input v-else v-model="ticket.assignedTo" />
         </div>
         <div class="requester-detail">
           <span class="label">Requester Detail:</span>

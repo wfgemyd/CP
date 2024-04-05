@@ -126,8 +126,8 @@ export default {
           <component
               :is="ticket.id === expandedTicketId ? 'extended-item' : 'ticket-item'"
               :ticket="ticket"
+              :isArchive="false"
               @click="ticket.id !== expandedTicketId && toggleExpandedView(ticket.id)"
-
               @closeExtendedView="closeExtendedView(ticket.id)"
           />
         </div>
