@@ -745,6 +745,14 @@ body {
   border-radius: 10px;
   box-sizing: border-box;
 }
+.extended_container .extended-item .ticket-details .table-container {
+  height: 18rem;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.extended_container .extended-item .ticket-details .attachment-name {
+  font-size: 0.7rem;
+}
 .extended_container .extended-item .ticket-summary {
   display: flex;
   justify-content: space-between;
@@ -773,6 +781,19 @@ body {
   justify-content: space-between;
   width: 100%;
 }
+.extended_container .extended-item .ticket-summary .ticket-info .ticket-row select {
+  border-color: #dadada;
+  border-width: 0.125rem;
+  border-style: solid;
+  border-radius: 5px;
+  padding: 0.1rem;
+  font-size: 0.8rem;
+  font-family: sans-serif;
+  margin-bottom: 0.3rem;
+}
+.extended_container .extended-item .ticket-summary .ticket-info .ticket-row select option {
+  margin-bottom: 1rem;
+}
 .extended_container .extended-item .ticket-summary .requester-detail, .extended_container .extended-item .ticket-summary .assignedto-detail {
   display: flex;
   flex-direction: column;
@@ -782,6 +803,19 @@ body {
   margin-bottom: 8px;
   border-radius: 10px;
   box-sizing: border-box;
+}
+.extended_container .extended-item .ticket-summary .requester-detail select, .extended_container .extended-item .ticket-summary .assignedto-detail select {
+  border-color: #dadada;
+  border-width: 0.125rem;
+  border-style: solid;
+  border-radius: 5px;
+  padding: 0.1rem;
+  font-size: 0.8rem;
+  font-family: sans-serif;
+  margin-bottom: 0.3rem;
+}
+.extended_container .extended-item .ticket-summary .requester-detail select option, .extended_container .extended-item .ticket-summary .assignedto-detail select option {
+  margin-bottom: 1rem;
 }
 .extended_container .extended-item .ticket-summary .label {
   font-weight: bold;
@@ -837,6 +871,11 @@ body {
 }
 .extended_container .extended-item .ticket-response .button_extended_container .add_comment:hover, .extended_container .extended-item .ticket-response .button_extended_container_ .add_comment:hover {
   background-color: #1e7e34;
+}
+.extended_container .extended-item .ticket-response span {
+  width: 100%;
+  color: #6ccb00;
+  font-weight: bolder;
 }
 .extended_container .timestamp {
   font-size: 0.75rem;

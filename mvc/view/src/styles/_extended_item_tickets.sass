@@ -27,7 +27,6 @@ body
   width: 46.25rem
   border: 1px solid #ccc
   padding: 0.5rem
-
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
   border-radius: $radius_outer
   box-sizing: border-box
@@ -50,6 +49,15 @@ body
       margin-left: 2rem
       border-radius: $radius_outer
       box-sizing: border-box
+      .table-container
+        height: 18rem
+        overflow-x: auto
+        max-width: 100%
+      .attachment-name
+        font-size: 0.7rem
+
+
+
 
     .ticket-summary
       +display_flex_
@@ -61,7 +69,6 @@ body
         display: flex
         flex-direction: column
         align-items: start
-
         width: 100%
         border: 1px solid #ccc
         padding: 0.5rem
@@ -73,6 +80,17 @@ body
           flex-direction: row
           justify-content: space-between
           width: 100%
+          select
+            border-color: $field_border
+            border-width: 0.125rem
+            border-style: solid
+            border-radius: $radius_inner
+            padding: 0.1rem
+            font-size: $input_fontsize
+            font-family: $font_text
+            margin-bottom: 0.3rem
+            option
+              margin-bottom: 1rem
 
 
 
@@ -86,6 +104,17 @@ body
         margin-bottom: 8px
         border-radius: $radius_outer
         box-sizing: border-box
+        select
+          border-color: $field_border
+          border-width: 0.125rem
+          border-style: solid
+          border-radius: $radius_inner
+          padding: 0.1rem
+          font-size: $input_fontsize
+          font-family: $font_text
+          margin-bottom: 0.3rem
+          option
+            margin-bottom: 1rem
       .label
         font-weight: bold
         color: #333333
@@ -146,6 +175,12 @@ body
 
           &:hover
             background-color: $comment-button-hover-bg-color
+      span
+        width: 100%
+        color: $p_in_nxp
+        font-weight: bolder
+
+
 
 
   .timestamp
