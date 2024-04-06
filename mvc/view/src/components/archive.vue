@@ -219,7 +219,7 @@ export default {
   components: {
     ExtendedItem,
   },
-  // ...
+
 };
 </script>
 

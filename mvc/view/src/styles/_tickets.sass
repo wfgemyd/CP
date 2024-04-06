@@ -4,6 +4,7 @@
 @use "./radius.sass" as * //import all the variables from index.sass
 @use "./fonts.sass" as * //import all the variables from index.sass
 @use "./navbar.sass" as *
+@use "./archive.sass" as *
 *,
 *::before,
 *::after
@@ -166,3 +167,35 @@ body
   .label
     color: $secondary_text_color
     font-size: $iteam_dates_stats
+
+.filter-container
+  position: relative
+
+
+  .filter-menu
+    @include absolute-position(110%, -25%, max-content)
+    background-color: white
+    border: 1px solid #ccc
+    padding: 10px
+    border-radius: 5px
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2)
+    z-index: 1
+
+  .filter-ticket
+    margin-bottom: 10rem
+
+  .filter-option
+    cursor: pointer
+    padding: 5px
+    display: flex
+    justify-content: space-between
+
+
+.search_results
+  margin-right: auto
+  width: 100%
+  background: none
+  border: none
+  color: #181e25
+  text-underline: #fca600
+  font-size: $header_fontsize - 0.6rem
