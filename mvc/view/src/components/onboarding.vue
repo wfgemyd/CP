@@ -24,13 +24,13 @@ export default {
   data() {
     return {
       checkboxSrc: vectorImage, // The initial image for the unchecked state
-      isChecked: false, // Initial state of the checkbox
+      checkedItems: [false, false, false, false, false],
       itemText: 'Your item text here',
     };
   },
   methods: {
-    toggleCheckbox() {
-      this.isChecked = !this.isChecked; // Toggle the checked state
+    toggleCheckbox(index) {
+      this.checkedItems[index] = !this.checkedItems[index];
       this.checkboxSrc = this.isChecked ? checkImage : vectorImage; // Update the image source based on the checked state
     }
   }
@@ -65,31 +65,18 @@ export default {
         </div>
 
         <div class="checklist">
-          <div class="item">
-            <div class="checkbox" :key="checkboxSrc" @click="toggleCheckbox" ><img class= "checkbox_vec" :class="{ 'checkbox-checked': isChecked }" :src="checkboxSrc" alt="checkbox" ></div>
+          <div v-for="(item, index) in checkedItems" :key="index" class="item">
+            <div class="checkbox" @click="toggleCheckbox(index)">
+              <img class="checkbox_vec" :class="{ 'checkbox-checked': item }" :src="item ? checkImage : vectorImage" alt="checkbox">
+            </div>
             <div class="text">{{ itemText }}</div>
           </div>
-          <div class="item">
-            <div class="checkbox" :key="checkboxSrc" @click="toggleCheckbox" ><img class= "checkbox_vec" :class="{ 'checkbox-checked': isChecked }" :src="checkboxSrc" alt="checkbox" ></div>
-            <div class="text">{{ itemText }}</div>
-          </div>
-          <div class="item">
-            <div class="checkbox" :key="checkboxSrc" @click="toggleCheckbox" ><img class= "checkbox_vec" :class="{ 'checkbox-checked': isChecked }" :src="checkboxSrc" alt="checkbox" ></div>
-            <div class="text">{{ itemText }}</div>
-          </div>
-          <div class="item">
-            <div class="checkbox" :key="checkboxSrc" @click="toggleCheckbox" ><img class= "checkbox_vec" :class="{ 'checkbox-checked': isChecked }" :src="checkboxSrc" alt="checkbox" ></div>
-            <div class="text">{{ itemText }}</div>
-          </div>
-          <div class="item">
-            <div class="checkbox" :key="checkboxSrc" @click="toggleCheckbox" ><img class= "checkbox_vec" :class="{ 'checkbox-checked': isChecked }" :src="checkboxSrc" alt="checkbox" ></div>
-            <div class="text">{{ itemText }}</div>
-          </div>
+
         </div>
 
-        <div class="finalize_checklist">
-          <button class="finalize_btn" @click="goTotickets">Submit</button>
-        </div>
+      <div class="finalize_checklist">
+        <button class="finalize_btn" @click="goTotickets" :disabled="!checkedItems.every(item => item)">Submit</button>
+      </div>
 
       </div>
 

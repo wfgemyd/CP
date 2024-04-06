@@ -286,6 +286,7 @@ body {
   max-width: calc(10 * 4.6875rem);
   width: 100%;
   height: auto;
+  margin-bottom: 2rem;
 }
 .wrapper2 .onboarding_container .onboarding_top {
   display: flex;
