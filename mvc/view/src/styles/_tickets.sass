@@ -172,24 +172,6 @@ body
   position: relative
 
 
-  .filter-menu
-    @include absolute-position(110%, -25%, max-content)
-    background-color: white
-    border: 1px solid #ccc
-    padding: 10px
-    border-radius: 5px
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2)
-    z-index: 1
-
-  .filter-ticket
-    margin-bottom: 10rem
-
-  .filter-option
-    cursor: pointer
-    padding: 5px
-    display: flex
-    justify-content: space-between
-
 
 .search_results
   margin-right: auto
@@ -199,3 +181,51 @@ body
   color: #181e25
   text-underline: #fca600
   font-size: $header_fontsize - 0.6rem
+
+
+
+.filter_menu
+  display: flex
+  background-color: white
+  align-items: center
+  border: 1px solid #ccc
+  padding: 10px
+  border-radius: 5px
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2)
+  z-index: 1
+  gap: 3rem
+  .filter-ticket
+    margin-bottom: 1rem
+    select
+      border-color: $field_border
+      border-width: 0.125rem
+      border-style: solid
+      border-radius: $radius_inner
+      padding: 0.4rem
+      font-size: $input_fontsize
+      font-family: $font_text
+
+    div
+      margin-bottom: 0.3rem
+      display: flex
+      justify-content: start
+      align-items: center
+    label
+      margin-left: 0.2rem
+      margin-bottom: 0
+      margin-right: 1rem
+    input
+      margin-right: 0.5rem
+
+  .sort-menu
+    border: 1px solid #ccc
+    padding: 10px
+    border-radius: 5px
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2)
+    height: fit-content
+    .filter-option
+      cursor: pointer
+      padding: 5px
+      display: flex
+      justify-content: space-between
+

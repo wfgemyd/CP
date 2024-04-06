@@ -212,65 +212,68 @@ export default {
             </div>
             <div class="filter-container">
               <button class="alltickets_filter" @click="toggleFilterMenu"><img src="../assets/filter.png" alt="filter button"></button>
-              <div v-if="filterMenuVisible" class="filter-menu">
-                <div class="filter-option" @click="handleColumnClick('title')">
-                  <span>Title</span>
-                  <span v-if="sortingColumn === 'title'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
-                </div>
-                <div class="filter-option" @click="handleColumnClick('createdOn')">
-                  <span>Created On</span>
-                  <span v-if="sortingColumn === 'createdOn'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
-                </div>
-                <div class="filter-option" @click="handleColumnClick('updatedOn')">
-                  <span>Updated On</span>
-                  <span v-if="sortingColumn === 'updatedOn'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
-                </div>
-                <div class="filter-option" @click="handleColumnClick('status')">
-                  <span>Status</span>
-                  <span v-if="sortingColumn === 'status'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
-                </div>
-                <div class="filter-option" @click="handleColumnClick('priority')">
-                  <span>Priority</span>
-                  <span v-if="sortingColumn === 'priority'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
-        <div v-if="filterMenuVisible" class="filter-menu">
-          <div class="filter-ticket">
-            <label for="id">Ticket ID:</label>
-            <input type="text" id="id" v-model="filterCriteria.id" @input="applyFilters">
+        <div v-if="filterMenuVisible" class="filter_menu">
+          <div class="filter_upper_row">
+            <div class="filter-ticket">
+              <label for="id">Ticket ID:</label>
+              <input type="text" id="id" v-model="filterCriteria.id" @input="applyFilters">
+            </div>
+            <div class="filter-ticket">
+              <label for="status">Status:</label>
+              <select id="status" v-model="filterCriteria.status" @change="applyFilters">
+                <option value="">All</option>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+                <option value="verifying">Verifying</option>
+              </select>
+            </div>
+            <div class="filter-ticket">
+              <label for="priority">Priority:</label>
+              <select id="priority" v-model="filterCriteria.priority" @change="applyFilters">
+                <option value="">All</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div class="filter-ticket">
+              <label>Created On:</label>
+              <input type="date" v-model="filterCriteria.createdOnStart" @change="applyFilters">
+              <input type="date" v-model="filterCriteria.createdOnEnd" @change="applyFilters">
+            </div>
+            <div class="filter-ticket">
+              <label>Updated On:</label>
+              <input type="date" v-model="filterCriteria.updatedOnStart" @change="applyFilters">
+              <input type="date" v-model="filterCriteria.updatedOnEnd" @change="applyFilters">
+            </div>
           </div>
-          <div class="filter-ticket">
-            <label for="status">Status:</label>
-            <select id="status" v-model="filterCriteria.status" @change="applyFilters">
-              <option value="">All</option>
-              <option value="open">Open</option>
-              <option value="closed">Closed</option>
-              <option value="verifying">Verifying</option>
-            </select>
+          <div class="sort-menu">
+            <div class="filter-option" @click="handleColumnClick('title')">
+              <span>Title</span>
+              <span v-if="sortingColumn === 'title'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
+            </div>
+            <div class="filter-option" @click="handleColumnClick('createdOn')">
+              <span>Created On</span>
+              <span v-if="sortingColumn === 'createdOn'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
+            </div>
+            <div class="filter-option" @click="handleColumnClick('updatedOn')">
+              <span>Updated On</span>
+              <span v-if="sortingColumn === 'updatedOn'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
+            </div>
+            <div class="filter-option" @click="handleColumnClick('status')">
+              <span>Status</span>
+              <span v-if="sortingColumn === 'status'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
+            </div>
+            <div class="filter-option" @click="handleColumnClick('priority')">
+              <span>Priority</span>
+              <span v-if="sortingColumn === 'priority'">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
+            </div>
           </div>
-          <div class="filter-ticket">
-            <label for="priority">Priority:</label>
-            <select id="priority" v-model="filterCriteria.priority" @change="applyFilters">
-              <option value="">All</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
-          <div class="filter-ticket">
-            <label>Created On:</label>
-            <input type="date" v-model="filterCriteria.createdOnStart" @change="applyFilters">
-            <input type="date" v-model="filterCriteria.createdOnEnd" @change="applyFilters">
-          </div>
-          <div class="filter-ticket">
-            <label>Updated On:</label>
-            <input type="date" v-model="filterCriteria.updatedOnStart" @change="applyFilters">
-            <input type="date" v-model="filterCriteria.updatedOnEnd" @change="applyFilters">
-          </div>
+
         </div>
 
         <div
