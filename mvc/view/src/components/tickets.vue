@@ -130,7 +130,7 @@ export default {
       // Fetch tickets from the database and assign them to this.tickets
       this.originalTickets  = [
         { id: '61', title: 'A', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High', project: "Gendalf" },
-        { id: '396731', title: 'B', createdOn: '2024-03-01', updatedOn: '2024-01-02', closedOn: '2024-04-01', status: 'Closed', priority: 'High' },
+        { id: '396731', title: 'B', createdOn: '2024-03-01', updatedOn: '2024-01-02', closedOn: '2024-04-06', status: 'Closed', priority: 'High' },
         { id: '185658356', title: 'C', createdOn: '2024-09-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
         { id: '17617171', title: 'Ticket 3691', createdOn: '2024-10-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Verifying', priority: 'High' },
         { id: '12376127', title: 'ZTickwyw96', createdOn: '2024-12-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
@@ -156,8 +156,8 @@ export default {
         if (status === 'Closed') {
           // Assuming you want to check if the ticket was closed today
           let today = new Date().toISOString().slice(0, 10); //for future use
-
-          return ticket.status === 'Closed' && ticket.closedOn === '2024-04-01';
+          console.log(today);
+          return ticket.status === 'Closed' && ticket.closedOn === today;
         }
         if (status === 'Open') {
           return ticket.status === 'Open';

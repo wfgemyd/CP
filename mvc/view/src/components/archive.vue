@@ -3,6 +3,7 @@ import {ref, computed, watch} from 'vue';
 import Navbar from "./nav_bar.vue";
 import { useRouter } from 'vue-router';
 
+
 const router = useRouter();
 const showMenu = ref(false);
 const activeButton = ref(null);
@@ -208,12 +209,77 @@ function applyFilters() {
 watch(() => filteredArchiveItems.value, (newValue) => {
   console.log('filteredArchiveItems updated:', newValue);
 }, { deep: true });
+
+
+
+const selectedRows = ref([]);
+
+const allRowsSelected = computed(() => {
+  return selectedRows.value.length === filteredArchiveItems.value.length;
+});
+
+const toggleAllRowSelection = () => {
+  selectedRows.value = allRowsSelected.value ? [] : filteredArchiveItems.value;
+};
+
+const exportToPDF = () => {
+  if (selectedRows.value.length === 0) {
+    alert('Please select at least one row to export.');
+    return;
+  }
+
+  const doc = new jsPDF('l', 'mm', 'a4');
+  const tableData = selectedRows.value.map(ticket => [
+    ticket.id,
+    ticket.requsterId,
+    ticket.priority,
+    ticket.title,
+    ticket.assignedTo,
+    ticket.createdBy,
+    ticket.status,
+    ticket.employmentStatus,
+    ticket.category,
+    ticket.role,
+    ticket.closedOn
+  ]);
+
+  const tableHeaders = [
+    'ID',
+    'Requester WBI',
+    'Priority',
+    'Title',
+    'Assigned To',
+    'Created By',
+    'Status',
+    'Employment Status',
+    'Category',
+    'Role',
+    'Closed On'
+  ];
+
+  const tableConfig = {
+    head: [tableHeaders],
+    body: tableData,
+    startY: 20,
+    headStyles: {
+      fillColor: [41, 128, 185],
+      textColor: 255,
+      halign: 'center'
+    }
+  };
+
+  doc.autoTable(tableConfig);
+
+  doc.save('exported_tickets.pdf');
+};
 </script>
 
 
 <script>
 import {ref} from "vue";
 import ExtendedItem from "./extended_item.vue";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default {
   components: {
@@ -246,7 +312,8 @@ export default {
               </div>
             </div>
 
-            <button class="btn export">Export</button>
+            <button class="btn export" @click="exportToPDF">Export</button>
+
           </div>
         </div>
       </div>
@@ -319,7 +386,10 @@ export default {
       <table :class="{ 'table-lower': showMenu }">
         <thead>
         <tr>
-          <th><input type="checkbox"></th>
+          <th>
+            <input type="checkbox" :checked="allRowsSelected" @change="toggleAllRowSelection">
+          </th>
+
           <th v-for="column in columns" v-show="column.visible" :key="column.name" @click="handleColumnClick(column.name)">
             {{ column.name }}
             <span v-if="sortingColumn === column.name">{{ sortingDirection === 'asc' ? '↑' : '↓' }}</span>
@@ -334,7 +404,10 @@ export default {
           <template v-if="ticket.id === expandedItemId">
           </template>
           <template v-else>
-            <td><input type="checkbox"></td>
+            <td>
+              <input type="checkbox" :value="ticket" v-model="selectedRows">
+            </td>
+
             <td v-if="columns.find(c => c.name === 'ARTIFACT ID' && c.visible)">
               <a href="#" @click.prevent="toggleExpandedView(ticket.id)">{{ ticket.id }}</a>
             </td>

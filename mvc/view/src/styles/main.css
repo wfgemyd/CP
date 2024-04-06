@@ -855,6 +855,19 @@ body {
   align-items: center;
   margin-bottom: 0.5rem;
 }
+.alltickets_item_upperrow .header_edit_style, .alltickets_item_lowerrow .header_edit_style {
+  display: flex;
+  align-items: center;
+}
+.alltickets_item_upperrow .header_edit_style .edit-button, .alltickets_item_lowerrow .header_edit_style .edit-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.alltickets_item_upperrow .header_edit_style .edit-button img, .alltickets_item_lowerrow .header_edit_style .edit-button img {
+  scale: 65%;
+  padding-top: 0.1rem;
+}
 .alltickets_item_upperrow .alltickets_item_header, .alltickets_item_upperrow .alltickets_item_ID, .alltickets_item_upperrow .alltickets_item_dates, .alltickets_item_upperrow .alltickets_item_status_priority, .alltickets_item_lowerrow .alltickets_item_header, .alltickets_item_lowerrow .alltickets_item_ID, .alltickets_item_lowerrow .alltickets_item_dates, .alltickets_item_lowerrow .alltickets_item_status_priority {
   display: flex;
   align-items: center;

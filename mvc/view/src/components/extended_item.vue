@@ -81,8 +81,12 @@ export default {
 <template>
   <div class="extended_container">
     <div class="alltickets_item_upperrow">
-      <h3 id="extended_subject_item">{{ ticket.title || 'Placeholder Title' }}</h3>
-      <button v-if="!isArchive && ticket.status !== 'Closed'" class="edit-button" @click="toggleEditing">{{ isEditing ? 'Save' : 'Edit' }}</button>
+      <div class = "header_edit_style">
+        <h3 id="extended_subject_item">{{ ticket.title || 'Placeholder Title' }}</h3>
+        <button v-if="!isArchive && ticket.status !== 'Closed'" class="edit-button" @click="toggleEditing">
+          <img src='../assets/NotePencil.png' alt="Edit & save">
+        </button>
+      </div>
       <button class="X" @click.stop="$emit('closeExtendedView')"><img src="../assets/Plus.png" alt="X"></button>
     </div>
 
