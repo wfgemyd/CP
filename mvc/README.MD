@@ -9,3 +9,4 @@ Upcoming in next steps (View):
 * Adding pages and results per page after establishing the second point in this list.
 * Adding restrictions for everyone except admins and managers ( ONLY for their projects).
 * Improving the onboarding list
+* If the username or password are wrong then and error messege will pop, same regarding not finishing the onboarding checklist, and if the file is too big as an attachment.
