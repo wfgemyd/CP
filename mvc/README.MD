@@ -12,3 +12,6 @@ Upcoming in next steps (View):
 * Adding restrictions for everyone except admins and managers (ONLY for their projects).
 * Improving the onboarding list: Making it editable.
 * If the username or password are wrong then and error message will pop, same regarding not finishing the onboarding checklist, and if the file is too big as an attachment.
+* Changing the edit icon to something brighter (color) and a save button, plus an alrt if the user will want to close the editing process. 
+* Change it from PDF to EXCEL export.
+* Remove "none" from the permission options in new ticket.
