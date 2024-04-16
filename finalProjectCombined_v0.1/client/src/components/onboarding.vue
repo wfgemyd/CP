@@ -1,11 +1,5 @@
 <script setup>
 import { ref } from 'vue';
-
-const checked = ref(false);
-const itemText = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit.' +
-    ' Accusamus cumque dolor doloribus esse ipsa, ipsam magni molestias temporibus ' +
-    'voluptatem. Doloremque facilis inventore libero vel? Accusamus explicabo id nihil ' +
-    'quaerat quod?\n';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -17,23 +11,107 @@ const goTotickets = () => {
 </script>
 
 <script>
-import vectorImage from '../assets/vector.jpg'; // Import the image
-import checkImage from '../assets/vector_clicked.jpg'; // Import the image
-
+import axios from 'axios';
+import vectorImage from '../assets/vector.jpg';
+import checkImage from '../assets/vector_clicked.jpg';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+const token = localStorage.getItem('token');
 export default {
+
+  setup() {
+    const router = useRouter();
+    return { router };
+  },
   data() {
     return {
-      checkboxSrc: vectorImage, // The initial image for the unchecked state
-      checkedItems: [false, false, false, false, false],
-      itemText: 'Your item text here',
+      checklistItems: [],
+      vectorImage,
+      checkImage,
+      fullName: '',
+      wbi: '',
     };
   },
+  computed: {
+    allItemsChecked() {
+      return this.checklistItems.every(item => item.checked);
+    },
+  },
   methods: {
+
+    goTotickets(){
+      this.$router.push('/tickets');
+      },
+    async fetchChecklistItems() {
+      try {
+
+        const response = await axios.get('/api/onboarding', {
+          headers: {
+            Authorization: `${token}`,
+            Path: '/api/onboarding',
+          },
+        });
+        console.log('Checklist items:', response.data);
+        console.log('Checklist items:', response.headers);
+        if (Array.isArray(response.data)) {
+          this.checklistItems = response.data.map(item => ({ ...item, checked: false }));
+        } else {
+          console.error('Expected an array but received:', response.data);
+          // Handle the case where response.data is not an array
+          // For example, you might want to set checklistItems to an empty array
+          this.checklistItems = [];
+          console.error('Checklist items:', this.checklistItems);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
     toggleCheckbox(index) {
-      this.checkedItems[index] = !this.checkedItems[index];
-      this.checkboxSrc = this.isChecked ? checkImage : vectorImage; // Update the image source based on the checked state
-    }
-  }
+      this.checklistItems[index].checked = !this.checklistItems[index].checked;
+    },
+    async submitChecklist() {
+      console.log('Submitting checklist...');
+      try {
+        const checkedItems = this.checklistItems.filter(item => item.checked).map(item => item.id);
+        const response = await axios.post('/api/onboarding/submit', { userId: 5, checkedItems }, {
+          headers: {
+            Authorization: `${token}`,
+            Path: '/api/onboarding/submit',
+          },
+        });
+
+        // Check the response status
+        if (response.status === 200) {
+          console.log('Checklist submitted successfully');
+          // Redirect to the tickets page or show a success message
+          this.goTotickets();
+        } else {
+          console.error('Error submitting checklist:', response.status, response.data);
+          // Handle the error scenario, show an error message, or take appropriate action
+        }
+      } catch (error) {
+        console.error('Submit error:', error);
+        // Handle the error scenario, show an error message, or take appropriate action
+      }
+    },
+    logout() {
+      // Clear user data from local storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('fullName');
+      localStorage.removeItem('wbi');
+
+      // Redirect to the login page
+      this.$router.push('/login');
+    },
+  },
+  mounted() {
+    this.fetchChecklistItems();
+    this.fullName = localStorage.getItem('fullName');
+    this.wbi = localStorage.getItem('wbi');
+    console.log('Full name:', this.fullName);
+    console.log('WBI:', this.wbi);
+  },
 };
 </script>
 
@@ -49,35 +127,30 @@ export default {
           <ul id="nav_items">
             <li class="user_picture"> <img src = "../assets/derp.png" alt="profile_pic"> </li>
             <li class="user-info"> <!-- Changed to class for reuse -->
-              <div>Full name</div>
-              <div class="wbi">@WBI</div>
+              <div>{{ fullName }}</div>
+              <div class="wbi">@{{ wbi }}</div>
             </li>
-            <li><a href="../" title="Logout" class="logout-btn"><img src = "../assets/logout.png" alt="logoutbtn"> </a></li>
+            <li><a @click="logout" title="Logout" class="logout-btn"><img src="../assets/logout.png" alt="logoutbtn"></a></li>
           </ul>
         </nav>
       </div>
 
       <div class="onboarding_window">
-
         <div class="onboarding_top">
           <h1 class="header">Onboarding Checklist</h1>
-          <img class="colorfil_underline" src= "../assets/colorfull_underline.png" alt="underline">
+          <img class="colorfil_underline" src="../assets/colorfull_underline.png" alt="underline">
         </div>
-
         <div class="checklist">
-          <div v-for="(item, index) in checkedItems" :key="index" class="item">
+          <div v-for="(item, index) in checklistItems" :key="item.id" class="item">
             <div class="checkbox" @click="toggleCheckbox(index)">
-              <img class="checkbox_vec" :class="{ 'checkbox-checked': item }" :src="item ? checkImage : vectorImage" alt="checkbox">
+              <img class="checkbox_vec" :class="{ 'checkbox-checked': item.checked }" :src="item.checked ? checkImage : vectorImage" alt="checkbox">
             </div>
-            <div class="text">{{ itemText }}</div>
+            <div class="text">{{ item.item_description }}</div>
           </div>
-
         </div>
-
-      <div class="finalize_checklist">
-        <button class="finalize_btn" @click="goTotickets" :disabled="!checkedItems.every(item => item)">Submit</button>
-      </div>
-
+        <div class="finalize_checklist">
+          <button class="finalize_btn" @click="submitChecklist" :disabled="!allItemsChecked">Submit</button>
+        </div>
       </div>
 
     </div>

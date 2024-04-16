@@ -7,21 +7,28 @@ const router = useRouter();
 const username = ref('');
 const password = ref('');
 
-
-
-const login = async message => {
-
-
+const login = async () => {
   try {
     const response = await axios.post('/login', {
       username: username.value,
       password: password.value
     });
 
-    console.log('Login response received:', response.data);
-
     if (response.data.success) {
-      await router.push('/onboarding');
+      // Set the default Authorization header with the received token
+      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+      // Store the token in localStorage
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('userRole', response.data.role);
+      localStorage.setItem('fullName', response.data.fullName);
+      localStorage.setItem('wbi', response.data.wbi);
+
+      // Check the user's role and redirect accordingly
+      if (response.data.role === 'New Employee') {
+        await router.push('/onboarding');
+      } else {
+        await router.push('/tickets'); // or any other appropriate route for non-new employees
+      }
     } else {
       console.error('Invalid password or login error');
     }
@@ -33,11 +40,9 @@ const login = async message => {
     let password = document.getElementById('password');
     username.value = '';
     password.value = '';
-
   }
 };
 </script>
-
 <template>
 <div class="wrapper">
   <div class="first_page_login_container login-page">

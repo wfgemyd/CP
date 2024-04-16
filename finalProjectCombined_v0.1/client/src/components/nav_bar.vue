@@ -1,5 +1,27 @@
 <script setup>
-import a from "./new_ticket.vue"
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import a from "./new_ticket.vue";
+
+const fullName = ref('');
+const wbi = ref('');
+const router = useRouter();
+
+onMounted(() => {
+  // Retrieve the user's full name and WBI from local storage or API
+  fullName.value = localStorage.getItem('fullName') || '';
+  wbi.value = localStorage.getItem('wbi') || '';
+});
+
+const logout = () => {
+  // Clear the user information from local storage
+  localStorage.removeItem('token');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('fullName');
+  localStorage.removeItem('wbi');
+  // Redirect to the login page
+  router.push('/login');
+};
 </script>
 
 <template>
@@ -17,11 +39,11 @@ import a from "./new_ticket.vue"
           <button type="submit"><img src = "../assets/searchbtn.png" alt="searchicon"><i class="fa fa-search"></i></button>
         </div></li>
         <li class="user_picture"> <img src = "../assets/derp.png" alt="profile_pic"> </li>
-        <li class="user-info"> <!-- Changed to class for reuse -->
-          <div>Full name</div>
-          <div class="wbi">@WBI</div>
+        <li class="user-info">
+          <div>{{ fullName }}</div>
+          <div class="wbi">@{{ wbi }}</div>
         </li>
-        <li><a href="../login" title="Logout" class="logout-btn"><img src = "../assets/logout.png" alt="logoutbtn"> </a></li>
+        <li><a @click="logout" title="Logout" class="logout-btn"><img src="../assets/logout.png" alt="logoutbtn"></a></li>
       </ul>
     </nav>
   </div>

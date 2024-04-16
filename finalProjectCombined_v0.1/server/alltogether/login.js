@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 function makeToken(user) {
     return jwt.sign(user, process.env.SECRET, { expiresIn: '12h' });
 }
+
 router.post('/', async (req, res) => {
     console.log('Received login request with body:', req.body);
 
@@ -16,15 +17,30 @@ router.post('/', async (req, res) => {
     console.log("User attempting to log in");
 
     try {
-        const sql = `SELECT * FROM fproject.user WHERE wbi = $1`;
+        const sql = `
+            SELECT u.*, r.role_name, u.f_name, u.l_name
+            FROM fproject.user u
+            JOIN fproject.role r ON u.role_id = r.id
+            WHERE u.wbi = $1
+        `;
         const values = [username];
         const result = await db.query(sql, values);
-        console.log('result:', result);
         if (result.rowCount) {
             const user = result.rows[0];
+            //const passwordMatch = await bcrypt.compare(password, user.password_hash);
             const passwordMatch = user.password_hash === password;
+
             if (passwordMatch) {
-                res.json({ token: makeToken({ username }), success: true });
+                const tokenPayload = {
+                    username: user.wbi,
+                    role: user.role_name,
+                    fullName: `${user.f_name} ${user.l_name}`,
+                    wbi: user.wbi,
+                };
+                console.log('tokenPayload:', tokenPayload.role);
+                console.log('tokenPayload:', tokenPayload.fullName);
+                const token = jwt.sign(tokenPayload, process.env.SECRET, { expiresIn: '12h' });
+                res.json({ token: token, role: user.role_name, fullName: tokenPayload.fullName, wbi: tokenPayload.wbi, success: true });
                 console.log("User logged in successfully");
             } else {
                 console.log("Invalid password");
@@ -38,6 +54,5 @@ router.post('/', async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 });
-
 
 module.exports = router;
