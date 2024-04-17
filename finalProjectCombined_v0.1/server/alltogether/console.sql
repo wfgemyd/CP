@@ -113,7 +113,7 @@ CREATE TABLE Fproject.ticket_status ( -- One to many relationship
 -- Creating 'ticket_priorities' table
 CREATE TABLE Fproject.ticket_priorities ( -- One to many relationship
     id SERIAL PRIMARY KEY,
-    priority_name VARCHAR,
+    priority_name VARCHAR DEFAULT 'Low',
     color INT
 );
 
@@ -441,22 +441,99 @@ BEGIN
         AND ucs.is_completed = FALSE
     ) INTO all_items_completed;
 
+    RAISE NOTICE 'User ID: %, All items completed: %', NEW.user_id, all_items_completed;
+
     -- If all items are completed, update the user's role to 'User'
     IF all_items_completed THEN
         UPDATE Fproject."user"
         SET role_id = user_role_id
         WHERE id = NEW.user_id AND role_id = new_employee_role_id;
+
+        RAISE NOTICE 'User role updated for User ID: %', NEW.user_id;
     END IF;
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$
+ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_check_onboarding_completion
 AFTER UPDATE ON Fproject.user_checklist_status
 FOR EACH ROW
 EXECUTE FUNCTION update_user_role_after_onboarding();
 
+-- Create a trigger function that will be called when a new user is added
+CREATE OR REPLACE FUNCTION Fproject.populate_user_checklist_status()
+RETURNS TRIGGER AS $$
+DECLARE
+    userRoleName VARCHAR;
+BEGIN
+    -- Determine the role name of the new user
+    SELECT role_name INTO userRoleName
+    FROM Fproject.role
+    WHERE id = NEW.role_id;
+
+    IF userRoleName != 'New Employee' THEN
+        -- If the user's role is not 'New Employee', mark all checklist items as completed
+        INSERT INTO Fproject.user_checklist_status (user_id, checklist_item_id, is_completed, completed_at)
+        SELECT NEW.id, checklist_item.id, TRUE, CURRENT_TIMESTAMP
+        FROM Fproject.checklist_item;
+    ELSE
+        -- If the user's role is 'New Employee', mark all checklist items as not completed
+        INSERT INTO Fproject.user_checklist_status (user_id, checklist_item_id, is_completed, completed_at)
+        SELECT NEW.id, checklist_item.id, FALSE, NULL
+        FROM Fproject.checklist_item;
+    END IF;
+
+    RETURN NEW;
+END;
+$$
+ LANGUAGE plpgsql;
+
+-- Create the trigger on the 'user' table
+CREATE TRIGGER trigger_populate_user_checklist_status
+AFTER INSERT ON Fproject."user"
+FOR EACH ROW
+EXECUTE FUNCTION Fproject.populate_user_checklist_status();
+
+
+-- Trigger function for handling insertions into checklist_item
+CREATE OR REPLACE FUNCTION Fproject.on_checklist_item_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- For each checklist_template, insert a new association with the new checklist_item
+    INSERT INTO Fproject.checklist_template_item (checklist_template_id, checklist_item_id)
+    SELECT checklist_template.id, NEW.id
+    FROM Fproject.checklist_template;
+
+    RETURN NEW;
+END;
+$$
+ LANGUAGE plpgsql;
+
+-- Trigger for insertions
+CREATE TRIGGER trigger_checklist_item_insert
+AFTER INSERT ON Fproject.checklist_item
+FOR EACH ROW
+EXECUTE FUNCTION Fproject.on_checklist_item_insert();
+
+-- Trigger function for handling deletions from checklist_item
+CREATE OR REPLACE FUNCTION Fproject.on_checklist_item_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Delete associations with the removed checklist_item from checklist_template_item
+    DELETE FROM Fproject.checklist_template_item WHERE checklist_item_id = OLD.id;
+
+    RETURN OLD;
+END;
+$$
+ LANGUAGE plpgsql;
+
+-- Trigger for deletions
+CREATE TRIGGER trigger_checklist_item_delete
+AFTER DELETE ON Fproject.checklist_item
+FOR EACH ROW
+EXECUTE FUNCTION Fproject.on_checklist_item_delete();
 
 ---------------------------------------------------------------------------------
     -- Inserting sample data
@@ -538,31 +615,35 @@ INSERT INTO Fproject.permissions (permission_name) VALUES
 ('Read and Write'),
 ('None');
 
-INSERT INTO Fproject."user" (WBI, f_name, l_name, email, role_id, employment_status_id, password_hash, is_fallback_approver) VALUES
-('WBI123', 'John', 'Doe', 'test@test.com', 1, 1, 'password', FALSE),
-('WBI456', 'Jane', 'Doe', 'test2@test.com', 2, 1, 'password', FALSE),
-('WBI789', 'Alice', 'Smith', 'test3@test.com', 3, 1, 'password', TRUE),
-('WBI101', 'Bob', 'Johnson', 'test4@test.com', 3, 1, 'password', FALSE),
-('WBI107', 'Bob', 'Johnson', 'test6@test.com', 4, 1, 'password', FALSE);
-
-
 INSERT INTO Fproject.checklist_template (checklist_name, role_id) VALUES
 ('Onboarding Checklist', 4); -- New Employee
 
 INSERT INTO Fproject.checklist_item (item_description) VALUES
 ('Complete HR Training'),
 ('Setup Workstation'),
-('Review Safety Protocol');
+('Review Safety Protocol'),
+('Install any necessary software and tools required for your role, such as IDEs, version control systems, and communication tools'),
+('Connect the computer to the network and log in using the provided credentials'),
+('The IT department will provide you with a company laptop or desktop computer'),
+('Customize your workspace settings, such as display resolution, keyboard and mouse preferences, and browser settings'),
+('Familiarize yourself with the office\s fire safety plan, including evacuation routes and assembly points'),
+('Know the location of fire extinguishers and how to use them in case of an emergency'),
+('Participate in regular fire drills to practice evacuation procedures'),
+('Do not overload electrical outlets or use damaged electrical cords'),
+('Keep liquids away from electrical equipment to avoid spills and potential electrical hazards'),
+('Report any electrical issues or malfunctions to the facilities team immediately'),
+('Adjust your chair, desk, and computer monitor to maintain proper posture and reduce strain on your neck, back, and wrists'),
+('Take regular breaks to stretch and rest your eyes, especially when working for extended periods'),
+('Attend the companys HR orientation session to learn about policies, benefits, and company culture'),
+('Review and acknowledge the employee handbook, which outlines the companys rules, regulations, and expectations'),
+('Complete any required training modules, such as diversity and inclusion, sexual harassment prevention, or data privacy and security');
 
-INSERT INTO Fproject.checklist_template_item (checklist_template_id, checklist_item_id) VALUES
-(1, 1),
-(1, 2),
-(1, 3);
-
-INSERT INTO Fproject.user_checklist_status (user_id, checklist_item_id, is_completed, completed_at) VALUES
-(5, 1, TRUE, CURRENT_TIMESTAMP),
-(5, 2, TRUE, CURRENT_TIMESTAMP),
-(5, 3, FALSE, NULL);
+INSERT INTO Fproject."user" (WBI, f_name, l_name, email, role_id, employment_status_id, password_hash, is_fallback_approver) VALUES
+('WBI123', 'John', 'Doe', 'test@test.com', 1, 1, 'password', FALSE),
+('WBI456', 'Jane', 'Doe', 'test2@test.com', 2, 1, 'password', FALSE),
+('WBI789', 'Alice', 'Smith', 'test3@test.com', 3, 1, 'password', TRUE),
+('WBI101', 'Bob', 'Johnson', 'test4@test.com', 4, 1, 'password', FALSE),
+('WBI107', 'Bob', 'Johnson', 'test6@test.com', 4, 1, 'password', FALSE);
 
 INSERT INTO Fproject.user_categories (user_id, category_id, permission_id) VALUES
 (1, 1, 2), -- Full access
@@ -573,7 +654,13 @@ INSERT INTO Fproject.user_categories (user_id, category_id, permission_id) VALUE
 (2, 3, 2), -- Full access
 (3, 1, 2), -- Full access
 (3, 2, 1), -- Read-only
-(3, 3, 1); -- Read-only
+(3, 3, 1), -- Read-only
+(4, 1, 2), -- Full access
+(4, 2, 2), -- Full access
+(4, 3, 1), -- Read-only
+(5, 1, 2), -- Full access
+(5, 2, 2), -- Full access
+(5, 3, 2); -- Read-only
 
 INSERT INTO Fproject.ticket (subject, content, status_id, priority_id, user_id, created_at, updated_at, assigned_to, category_id) VALUES
 ('New Ticket', 'This is a new ticket', 1, 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, 1),
@@ -1110,7 +1197,7 @@ SELECT * FROM Fproject.event_store ORDER BY event_id DESC LIMIT 2;
 -- Closing the ticket (assuming ticket_id 1 exists)
 
 
-CALL Fproject.CloseTicket(4);
+--CALL Fproject.CloseTicket(4);
 
 
 ROLLBACK;
