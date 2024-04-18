@@ -4,9 +4,6 @@ const router = require('express').Router();
 const db = require('./postgres');
 const bcrypt = require('bcrypt');
 
-function makeToken(user) {
-    return jwt.sign(user, process.env.SECRET, { expiresIn: '12h' });
-}
 
 router.post('/', async (req, res) => {
     console.log('Received login request with body:', req.body);
@@ -18,7 +15,7 @@ router.post('/', async (req, res) => {
 
     try {
         const sql = `
-            SELECT u.*, r.role_name, u.f_name, u.l_name
+            SELECT u.*, r.role_name, u.f_name, u.l_name, u.id
             FROM fproject.user u
             JOIN fproject.role r ON u.role_id = r.id
             WHERE u.wbi = $1
@@ -36,11 +33,14 @@ router.post('/', async (req, res) => {
                     role: user.role_name,
                     fullName: `${user.f_name} ${user.l_name}`,
                     wbi: user.wbi,
+                    uId: user.id,
                 };
-                console.log('tokenPayload:', tokenPayload.role);
-                console.log('tokenPayload:', tokenPayload.fullName);
-                const token = jwt.sign(tokenPayload, process.env.SECRET, { expiresIn: '12h' });
-                res.json({ token: token, role: user.role_name, fullName: tokenPayload.fullName, wbi: tokenPayload.wbi, success: true });
+                console.log('________________________________________________________');
+                console.log('tokenPayload uId:', tokenPayload.uId);
+
+                const token = jwt.sign(tokenPayload, process.env.SECRET, { expiresIn: '1h' });
+
+                res.json({ token: token, role: user.role_name, fullName: tokenPayload.fullName, wbi: tokenPayload.wbi, uId: tokenPayload.uId ,success: true });
                 console.log("User logged in successfully");
             } else {
                 console.log("Invalid password");
