@@ -4,7 +4,8 @@ const db = require('./postgres');
 
 //get the list for the onboarding checklist
 router.get('/', async (req, res) => {
-try {
+
+    try {
     const sql = `
         SELECT checklist_item.id, checklist_item.item_description
         FROM fproject.checklist_item checklist_item

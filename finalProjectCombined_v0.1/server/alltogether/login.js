@@ -2,7 +2,7 @@ require('dotenv').config();
 const jwt = require("jsonwebtoken");
 const router = require('express').Router();
 const db = require('./postgres');
-const bcrypt = require('bcrypt');
+
 
 
 router.post('/', async (req, res) => {
@@ -35,9 +35,6 @@ router.post('/', async (req, res) => {
                     wbi: user.wbi,
                     uId: user.id,
                 };
-                console.log('________________________________________________________');
-                console.log('tokenPayload uId:', tokenPayload.uId);
-
                 const token = jwt.sign(tokenPayload, process.env.SECRET, { expiresIn: '1h' });
 
                 res.json({ token: token, role: user.role_name, fullName: tokenPayload.fullName, wbi: tokenPayload.wbi, uId: tokenPayload.uId ,success: true });
