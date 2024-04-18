@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-
+import {ref, onMounted} from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
   ticket: Object,
@@ -9,16 +9,50 @@ const props = defineProps({
     default: false
   }
 });
-const ticket_priority = { low: "low", medium: "medium", high: "high", urgent: "urgent", none: "none"};
-const ticket_status = { open: "open", verifying: "verifying", rejected: "rejected", closed: "closed" };
-const required_category = { gendalf: "gendalf", banana: "banana", coolchip: "coolchip" };
-const ticket_manager = { manager1: "Manager", manager2: "manager2", manager3: "manager3" };
-const employment_status = { contractor: "contractor", fullTime: "full-time", partTime: "part-time", intern: "intern" };
-const permission_required = { read: "read", write: "write", none: "none" };
-const user_role = { designer: "designer", developer: "developer", manager: "Manager", tester: "tester" };
-const attachment = { none: null };
 
+const ticket_priority = ref({});
+const ticket_status = ref({});
+const required_category = ref({});
+const ticket_manager = ref({});
+const employment_status = ref({});
+const permission_required = ref({});
+const user_role = ref({});
+
+onMounted(async () => {
+  try {
+    // Fetch ticket priorities from the database
+    const priorityResponse = await axios.get('/api/ticket-priorities');
+    ticket_priority.value = priorityResponse.data;
+
+    // Fetch ticket statuses from the database
+    const statusResponse = await axios.get('/api/ticket-statuses');
+    ticket_status.value = statusResponse.data;
+
+    // Fetch required categories from the database
+    const categoryResponse = await axios.get('/api/categories');
+    required_category.value = categoryResponse.data;
+
+    // Fetch ticket managers from the database
+    const managerResponse = await axios.get('/api/ticket-managers');
+    ticket_manager.value = managerResponse.data;
+
+    // Fetch employment statuses from the database
+    const employmentResponse = await axios.get('/api/employment-statuses');
+    employment_status.value = employmentResponse.data;
+
+    // Fetch permission levels from the database
+    const permissionResponse = await axios.get('/api/permissions');
+    permission_required.value = permissionResponse.data;
+
+    // Fetch user roles from the database
+    const roleResponse = await axios.get('/api/user-roles');
+    user_role.value = roleResponse.data;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+});
 </script>
+
 <script>
 
 export default {
@@ -30,13 +64,12 @@ export default {
       isEditing: false,
       selectedFile: null,
       fileUploaded: false,
-      chatMessages: [
-        { id: 1, content: "We are checking if the slot is open", isSender: false, timestamp: "Today, 11:15 PM" },
-        { id: 2, content: "Okay, keep me updated", isSender: true, timestamp: "Today, 11:30 PM" },
-        { id: 3, content: "need access to gandalf", isSender: true, timestamp: "Today, 11:35 PM" }
-      ],
+      chatMessages: [],
       responseMessage: ''
     }
+  },
+  mounted() {
+    this.fetchChatMessages();
   },
   methods: {
     toggleEditing() {
@@ -55,13 +88,41 @@ export default {
         this.fileUploaded = false; // Set fileUploaded to false if no file is selected or size exceeds limit
       }
     },
+    async fetchChatMessages() {
+      try {
+        const response = await axios.get(`/api/tickets/${this.ticket.id}/comments`);
+        this.chatMessages = response.data;
+      } catch (error) {
+        console.error('Error fetching chat messages:', error);
+      }
+    },
+    async submitResponse() {
+      if (this.responseMessage.trim() !== '' || this.selectedFile) {
+        try {
+          const formData = new FormData();
+          formData.append('comment', this.responseMessage);
+          if (this.selectedFile) {
+            formData.append('file', this.selectedFile);
+          }
+
+          await axios.post(`/api/tickets/${this.ticket.id}/comments`, formData);
+          this.responseMessage = '';
+          this.selectedFile = null;
+          this.fileUploaded = false;
+          this.fetchChatMessages();
+        } catch (error) {
+          console.error('Error submitting response:', error);
+        }
+      }
+    }
+    /*
     async submitResponse() {
       if (this.responseMessage.trim() !== '' || this.selectedFile) {
         const newMessage = {
           id: this.chatMessages.length + 1,
           content: this.responseMessage,
           isSender: true,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
           attachment: this.selectedFile ? {
             name: this.selectedFile.name,
             type: this.selectedFile.type,
@@ -74,6 +135,7 @@ export default {
         this.fileUploaded = false;
       }
     }
+    */
   }
 }
 </script>

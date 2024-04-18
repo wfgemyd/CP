@@ -101,6 +101,7 @@ export default {
       localStorage.removeItem('userRole');
       localStorage.removeItem('fullName');
       localStorage.removeItem('wbi');
+      localStorage.removeItem('uId');
 
       // Redirect to the login page
       this.$router.push('/login');

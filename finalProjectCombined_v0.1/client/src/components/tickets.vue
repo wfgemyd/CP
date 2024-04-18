@@ -13,6 +13,7 @@ const goToNewticket = () => {
 <script>
 import TicketItem from './item_in_tickets.vue';
 import ExtendedItem from './extended_item.vue';
+import {toRaw} from "vue";
 
 export default {
   components: {
@@ -29,6 +30,7 @@ export default {
       sortingColumn: '',
       sortingDirection: '',
       showSearchResults: false,
+      originalTickets: [],
       filterCriteria: {
         id: '',
         title: '',
@@ -42,7 +44,6 @@ export default {
     }
   },
   mounted() {
-    this.fetchTickets();
     this.fetchTickets().then(() => {
       this.filterTickets(this.selectedStatus);
     });
@@ -127,21 +128,32 @@ export default {
       this.expandedTicketId = this.expandedTicketId === ticketId ? null : ticketId;
       },
     async fetchTickets() {
-      // Fetch tickets from the database and assign them to this.tickets
-      this.originalTickets  = [
-        { id: '61', title: 'A', createdOn: '2024-01-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High', project: "Gendalf" },
-        { id: '396731', title: 'B', createdOn: '2024-03-01', updatedOn: '2024-01-02', closedOn: '2024-04-06', status: 'Closed', priority: 'High' },
-        { id: '185658356', title: 'C', createdOn: '2024-09-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
-        { id: '17617171', title: 'Ticket 3691', createdOn: '2024-10-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Verifying', priority: 'High' },
-        { id: '12376127', title: 'ZTickwyw96', createdOn: '2024-12-01', updatedOn: '2024-01-02', closedOn: '2024-01-03', status: 'Open', priority: 'High' },
-
-      ];
-      //const response = await fetch('/api/tickets');
-      //const jsonTickets = await response.json();
-      //this.originalTickets = jsonTickets;
-      //this.tickets = [...this.originalTickets];
-
-      this.tickets = [...this.originalTickets]; //copy
+      try {
+        const response = await fetch('/api/tickets', {
+          headers: {
+            'Authorization': `${localStorage.getItem('token')}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const jsonTickets = await response.json();
+        this.originalTickets = Array.isArray(jsonTickets) ? jsonTickets.map(ticket => ({
+          ...ticket,
+          title: ticket.subject,
+          createdOn: ticket.createdAt, // Map 'createdAt' to 'createdOn'
+          updatedOn: ticket.updatedAt, // Map 'updatedAt' to 'updatedOn'
+          // If there's a 'closedAt' property from the backend, map it to 'closedOn'
+          // Otherwise, you might need to add logic to determine if and when a ticket is considered 'closed'
+          closedOn: ticket.closedAt || '', // Placeholder, adjust based on your data
+        })) : [];
+        this.tickets = [...this.originalTickets];
+        console.log(this.tickets);
+      } catch (err) {
+        console.error(err);
+        console.log('Error fetching tickets');
+        console.log('Error fetching tickets');
+      }
     },
     filterTickets(status) {
       this.selectedStatus = status;
