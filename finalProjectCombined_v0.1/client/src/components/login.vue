@@ -22,6 +22,7 @@ const login = async () => {
       localStorage.setItem('userRole', response.data.role);
       localStorage.setItem('fullName', response.data.fullName);
       localStorage.setItem('wbi', response.data.wbi);
+      localStorage.setItem('uId', response.data.uId);
 
       // Check the user's role and redirect accordingly
       if (response.data.role === 'New Employee') {

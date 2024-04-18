@@ -72,8 +72,9 @@ export default {
     async submitChecklist() {
       console.log('Submitting checklist...');
       try {
+        console.log(localStorage.getItem('uId'));
         const checkedItems = this.checklistItems.filter(item => item.checked).map(item => item.id);
-        const response = await axios.post('/api/onboarding/submit', { userId: 5, checkedItems }, {
+        const response = await axios.post('/api/onboarding/submit', { userId: localStorage.getItem('uId'), checkedItems }, {
           headers: {
             Authorization: `${token}`,
             Path: '/api/onboarding/submit',
