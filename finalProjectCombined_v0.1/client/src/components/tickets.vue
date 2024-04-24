@@ -1,22 +1,22 @@
 <script setup>
-import { ref } from 'vue';
-import Navbar from "./nav_bar.vue";
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
 
-const router = useRouter();
 
-const goToNewticket = () => {
-  router.push('/new_ticket');
-};
+//onMounted(async () => {
+//  await fetchTickets();
+ // filterTickets(selectedStatus.value); // Make sure this is reactive or appropriately triggered
+//});
 
 </script>
 <script>
+import Navbar from "./nav_bar.vue";
+import { useRouter } from 'vue-router';
 import TicketItem from './item_in_tickets.vue';
 import ExtendedItem from './extended_item.vue';
-import {toRaw} from "vue";
 
 export default {
   components: {
+    Navbar,
     TicketItem,
     ExtendedItem
   },
@@ -44,11 +44,38 @@ export default {
     }
   },
   mounted() {
-    this.fetchTickets().then(() => {
-      this.filterTickets(this.selectedStatus);
-    });
+    this.fetchTickets();
   },
   methods: {
+    async fetchTickets() {
+      try {
+        const response = await fetch('/api/tickets', {
+          headers: {
+            'Authorization': `${localStorage.getItem('token')}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const jsonTickets = await response.json();
+        this.tickets = jsonTickets.map(ticket => ({
+          ...ticket,
+          title: ticket.subject,
+          createdOn: ticket.created_at.split('T')[0],
+          updatedOn: ticket.updated_at.split('T')[0],
+          closedOn: ticket.completed_at ? ticket.completed_at.split('T')[0] : '',
+          status: ticket.status_name,
+          priority: ticket.priority_name,
+          id: ticket.ticket_id
+        }));
+        this.originalTickets = [...this.tickets];
+      } catch (err) {
+        console.error('Error fetching tickets:', err);
+      }
+    },
+    goToNewticket() {
+      this.$router.push('/new_ticket');
+    },
     toggleFilterMenu() {
       this.filterMenuVisible = !this.filterMenuVisible;
     },
@@ -127,34 +154,6 @@ export default {
 
       this.expandedTicketId = this.expandedTicketId === ticketId ? null : ticketId;
       },
-    async fetchTickets() {
-      try {
-        const response = await fetch('/api/tickets', {
-          headers: {
-            'Authorization': `${localStorage.getItem('token')}`
-          }
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const jsonTickets = await response.json();
-        this.originalTickets = Array.isArray(jsonTickets) ? jsonTickets.map(ticket => ({
-          ...ticket,
-          title: ticket.subject,
-          createdOn: ticket.createdAt, // Map 'createdAt' to 'createdOn'
-          updatedOn: ticket.updatedAt, // Map 'updatedAt' to 'updatedOn'
-          // If there's a 'closedAt' property from the backend, map it to 'closedOn'
-          // Otherwise, you might need to add logic to determine if and when a ticket is considered 'closed'
-          closedOn: ticket.closedAt || '', // Placeholder, adjust based on your data
-        })) : [];
-        this.tickets = [...this.originalTickets];
-        console.log(this.tickets);
-      } catch (err) {
-        console.error(err);
-        console.log('Error fetching tickets');
-        console.log('Error fetching tickets');
-      }
-    },
     filterTickets(status) {
       this.selectedStatus = status;
       this.showSearchResults = false; // Hide the search results when filtering by status
@@ -191,7 +190,7 @@ export default {
       <div class="alltickets_window">
         <div class="alltickets_header">
           <h1>Tickets</h1>
-          <button class="create_ticket" @click="goToNewticket">New Ticket</button>
+          <button class="create_ticket" @click="goToNewticket()">New Ticket</button>
         </div>
         <div class="alltickets_navbar">
           <div class="ticket_status_view_options">

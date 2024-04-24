@@ -2,13 +2,18 @@ require('dotenv').config();
 // authorize.js
 
 const jwt = require('jsonwebtoken');
+const rolePermissions = {
+    tickets: {
+        Administrator: true, // Full access
+        Manager: true, // Limited to managed categories
+        User: false, // No access or limited access if needed
+        'New Employee': false // No access
+    }
+};
 
 function authorize(req, res, next) {
     const token = req.headers.authorization;
-    let onboardingPath = req.headers.path;
-    console.log('________________________________________________________');
-    console.log('Token:', token);
-
+    const requestedPath = req.path; // Use req.path to get the path of the request
 
     if (!token) {
         return res.status(401).json({ message: 'No token provided' });
@@ -20,22 +25,23 @@ function authorize(req, res, next) {
             return res.status(401).json({ message: 'Invalid token' });
         }
         req.user = decoded;
-        console.log('Role:', req.user.role);
 
-        console.log('________________________________________________________');
-        // Check the user's role
-        if (req.user.role === 'New Employee') {
-            // Allow access to the onboarding route for "New Employee" users
-            if (onboardingPath === '/api/onboarding' || onboardingPath === '/api/onboarding/submit') {
-                return next();
-            } else {
+        // Check if the route is part of the tickets module and if the role is permitted
+        if (requestedPath.includes('/api/tickets')) {
+            const isAllowed = rolePermissions.tickets[req.user.role] || false;
+            if (!isAllowed) {
                 return res.status(403).json({ message: 'You do not have permission to access this route' });
             }
         }
 
-        // Allow access to other routes for authenticated users with appropriate roles
+        // Special handling for new employees
+        if (req.user.role === 'New Employee' && !requestedPath.startsWith('/api/onboarding')) {
+            return res.status(403).json({ message: 'You do not have permission to access this route' });
+        }
+
         next();
     });
 }
+
 
 module.exports = authorize;

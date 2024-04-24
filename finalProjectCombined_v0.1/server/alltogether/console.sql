@@ -4,100 +4,100 @@ CREATE SCHEMA IF NOT EXISTS Fproject;
 
 -- Creating 'employment_status' table
 CREATE TABLE Fproject.employment_status (
-    id SERIAL PRIMARY KEY,
-    employment_name VARCHAR
+                                            id SERIAL PRIMARY KEY,
+                                            employment_name VARCHAR
 );
 
 -- Creating 'role' table
 CREATE TABLE Fproject.role (
-    id SERIAL PRIMARY KEY,
-    role_name VARCHAR UNIQUE,
-    role_description TEXT
+                               id SERIAL PRIMARY KEY,
+                               role_name VARCHAR UNIQUE,
+                               role_description TEXT
 );
 
 -- Creating 'user' table
 CREATE TABLE Fproject."user" (
-    id SERIAL PRIMARY KEY,
-    WBI VARCHAR UNIQUE NOT NULL,
-    f_name VARCHAR NOT NULL,
-    l_name VARCHAR NOT NULL,
-    email VARCHAR NOT NULL UNIQUE,
-    role_id INT REFERENCES Fproject.role(id), -- Foreign key to the 'role' table
-    employment_status_id INT REFERENCES Fproject.employment_status(id), -- Foreign key
-    password_hash VARCHAR, -- Storing the hashed password -- For Node.js, bcrypt is a good library for hashing passwords
-    is_fallback_approver BOOLEAN DEFAULT FALSE -- Indicates whether the user can be assigned as a fallback approver for tickets
+                                 id SERIAL PRIMARY KEY,
+                                 WBI VARCHAR UNIQUE NOT NULL,
+                                 f_name VARCHAR NOT NULL,
+                                 l_name VARCHAR NOT NULL,
+                                 email VARCHAR NOT NULL UNIQUE,
+                                 role_id INT REFERENCES Fproject.role(id), -- Foreign key to the 'role' table
+                                 employment_status_id INT REFERENCES Fproject.employment_status(id), -- Foreign key
+                                 password_hash VARCHAR, -- Storing the hashed password -- For Node.js, bcrypt is a good library for hashing passwords
+                                 is_fallback_approver BOOLEAN DEFAULT FALSE -- Indicates whether the user can be assigned as a fallback approver for tickets
 );
 
 -- Creating 'department' table
 CREATE TABLE Fproject.department (
-    id SERIAL PRIMARY KEY,
-    dep_name VARCHAR
+                                     id SERIAL PRIMARY KEY,
+                                     dep_name VARCHAR
 );
 
 -- Creating 'position' table
 CREATE TABLE Fproject.position (
-    id SERIAL PRIMARY KEY,
-    pos_name VARCHAR
+                                   id SERIAL PRIMARY KEY,
+                                   pos_name VARCHAR
 );
 
 -- Creating 'certificates' table
 CREATE TABLE Fproject.certificates (
-    id SERIAL PRIMARY KEY,
-    certificate_name VARCHAR,
-    is_permanent BOOLEAN,
-    certificate_valid_from DATE,
-    certificate_valid_till DATE
+                                       id SERIAL PRIMARY KEY,
+                                       certificate_name VARCHAR,
+                                       is_permanent BOOLEAN,
+                                       certificate_valid_from DATE,
+                                       certificate_valid_till DATE
 );
 
 -- Creating 'department_user' table
 CREATE TABLE Fproject.department_user ( -- Many to many relationship
-    department_id INT REFERENCES Fproject.department(id),
-    user_id INT REFERENCES Fproject."user"(id),
-    PRIMARY KEY (department_id, user_id)
+                                          department_id INT REFERENCES Fproject.department(id),
+                                          user_id INT REFERENCES Fproject."user"(id),
+                                          PRIMARY KEY (department_id, user_id)
 );
 
 -- Creating 'position_user' table
 CREATE TABLE Fproject.position_user ( -- Many to many relationship
-    position_id INT REFERENCES Fproject.position(id),
-    user_id INT REFERENCES Fproject."user"(id),
-    PRIMARY KEY (position_id, user_id)
+                                        position_id INT REFERENCES Fproject.position(id),
+                                        user_id INT REFERENCES Fproject."user"(id),
+                                        PRIMARY KEY (position_id, user_id)
 );
 
 -- Creating 'certificates_user' table
 CREATE TABLE Fproject.certificates_user ( -- Many to many relationship
-    certificate_id INT REFERENCES Fproject.certificates(id),
-    user_id INT REFERENCES Fproject."user"(id),
-    PRIMARY KEY (certificate_id, user_id)
+                                            certificate_id INT REFERENCES Fproject.certificates(id),
+                                            user_id INT REFERENCES Fproject."user"(id),
+                                            PRIMARY KEY (certificate_id, user_id)
 );
 ------------------------------------------------------------------------------------------------
 
 -- Checklist Templates
 CREATE TABLE Fproject.checklist_template (
-    id SERIAL PRIMARY KEY,
-    checklist_name VARCHAR,
-    role_id INT REFERENCES Fproject.role(id) -- Associating checklist with a specific role
+                                             id SERIAL PRIMARY KEY,
+                                             checklist_name VARCHAR,
+                                             role_id INT REFERENCES Fproject.role(id) -- Associating checklist with a specific role
 );
 
 -- Checklist Items
 CREATE TABLE Fproject.checklist_item (
-    id SERIAL PRIMARY KEY,
-    item_description TEXT
+                                         id SERIAL PRIMARY KEY,
+                                         item_description TEXT
 );
 
 -- Many-to-Many relationship between Checklist Templates and Checklist Items
 CREATE TABLE Fproject.checklist_template_item (
-    checklist_template_id INT REFERENCES Fproject.checklist_template(id),
-    checklist_item_id INT REFERENCES Fproject.checklist_item(id),
-    PRIMARY KEY (checklist_template_id, checklist_item_id)
+                                                  checklist_template_id INT REFERENCES Fproject.checklist_template(id),
+                                                  checklist_item_id INT REFERENCES Fproject.checklist_item(id),
+                                                  PRIMARY KEY (checklist_template_id, checklist_item_id)
 );
 
 -- User Checklist Status
 CREATE TABLE Fproject.user_checklist_status (
-    user_id INT REFERENCES Fproject."user"(id),
-    checklist_item_id INT REFERENCES Fproject.checklist_item(id),
-    is_completed BOOLEAN DEFAULT FALSE,
-    completed_at TIMESTAMP NULL, -- Optionally track when the item was completed
-    PRIMARY KEY (user_id, checklist_item_id)
+                                                user_id INT REFERENCES Fproject."user"(id),
+                                                checklist_item_id INT REFERENCES Fproject.checklist_item(id),
+                                                is_completed BOOLEAN DEFAULT FALSE,
+                                                completed_at TIMESTAMP NULL, -- Optionally track when the item was completed
+                                                PRIMARY KEY (user_id, checklist_item_id)
 );
 
 
@@ -105,108 +105,108 @@ CREATE TABLE Fproject.user_checklist_status (
 
 -- Creating 'ticket_status' table
 CREATE TABLE Fproject.ticket_status ( -- One to many relationship
-    id SERIAL PRIMARY KEY,
-    status_name VARCHAR,
-    color BIGINT
+                                        id SERIAL PRIMARY KEY,
+                                        status_name VARCHAR,
+                                        color BIGINT
 );
 
 -- Creating 'ticket_priorities' table
 CREATE TABLE Fproject.ticket_priorities ( -- One to many relationship
-    id SERIAL PRIMARY KEY,
-    priority_name VARCHAR,
-    color INT
+                                            id SERIAL PRIMARY KEY,
+                                            priority_name VARCHAR,
+                                            color INT
 );
 
 -- Creating 'categories' table (project names)
 CREATE TABLE Fproject.categories (
-    category_id SERIAL PRIMARY KEY,
-    category_name VARCHAR UNIQUE NOT NULL
+                                     category_id SERIAL PRIMARY KEY,
+                                     category_name VARCHAR UNIQUE NOT NULL
 );
 
 -- Creating 'ticket' table
 CREATE TABLE Fproject.ticket (
-    id SERIAL PRIMARY KEY,
-    subject VARCHAR,
-    content TEXT,
-    file_data BYTEA, -- Optional: If you want to store file data in the database
-    status_id INT REFERENCES Fproject.ticket_status(id),
-    priority_id INT REFERENCES Fproject.ticket_priorities(id),
-    user_id INT REFERENCES Fproject."user"(id), -- Assuming there's a 'user' table to reference
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    completed_at TIMESTAMP NULL,
-    assigned_to INT REFERENCES Fproject."user"(id), --to whom the ticket is assigned
-    fallback_approver INT REFERENCES Fproject."user"(id) NULL, -- If the assigned user is not available, the ticket can be assigned to a fallback approver
-    category_id INT REFERENCES Fproject.categories(category_id)
+                                 id SERIAL PRIMARY KEY,
+                                 subject VARCHAR,
+                                 content TEXT,
+                                 file_data BYTEA, -- Optional: If you want to store file data in the database
+                                 status_id INT REFERENCES Fproject.ticket_status(id),
+                                 priority_id INT REFERENCES Fproject.ticket_priorities(id),
+                                 user_id INT REFERENCES Fproject."user"(id), -- Assuming there's a 'user' table to reference
+                                 created_at TIMESTAMP,
+                                 updated_at TIMESTAMP,
+                                 completed_at TIMESTAMP NULL,
+                                 assigned_to INT REFERENCES Fproject."user"(id), --to whom the ticket is assigned
+                                 fallback_approver INT REFERENCES Fproject."user"(id) NULL, -- If the assigned user is not available, the ticket can be assigned to a fallback approver
+                                 category_id INT REFERENCES Fproject.categories(category_id)
 );
 
 -- Creating a 'permissions' table
 CREATE TABLE Fproject.permissions (
-    id SERIAL PRIMARY KEY,
-    permission_name VARCHAR UNIQUE
+                                      id SERIAL PRIMARY KEY,
+                                      permission_name VARCHAR UNIQUE
 );
 
 -- Creating 'user_categories' table
 CREATE TABLE Fproject.user_categories (
-    user_id INT REFERENCES Fproject."user"(id),
-    category_id INT REFERENCES Fproject.categories(category_id),
-    permission_id INT REFERENCES Fproject.permissions(id), -- The level of access the user has for the category
-    PRIMARY KEY (user_id, category_id, permission_id)
+                                          user_id INT REFERENCES Fproject."user"(id),
+                                          category_id INT REFERENCES Fproject.categories(category_id),
+                                          permission_id INT REFERENCES Fproject.permissions(id), -- The level of access the user has for the category
+                                          PRIMARY KEY (user_id, category_id, permission_id)
 );
 
 -- Creating 'ticket_comment' table
 CREATE TABLE Fproject.ticket_comment (
-    id SERIAL PRIMARY KEY,
-    ticket_id INT REFERENCES Fproject.ticket(id),
-    user_id INT REFERENCES Fproject."user"(id), -- The user who made the comment
-    comment TEXT, -- The content of the comment
-    file_data BYTEA, -- adding files to the comment
-    status_change INT REFERENCES Fproject.ticket_status(id), -- Optional reference to a new status
-    priority_change INT REFERENCES Fproject.ticket_priorities(id), -- Optional reference to a new priority
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- The date and time when the comment was made
+                                         id SERIAL PRIMARY KEY,
+                                         ticket_id INT REFERENCES Fproject.ticket(id),
+                                         user_id INT REFERENCES Fproject."user"(id), -- The user who made the comment
+                                         comment TEXT, -- The content of the comment
+                                         file_data BYTEA, -- adding files to the comment
+                                         status_change INT REFERENCES Fproject.ticket_status(id), -- Optional reference to a new status
+                                         priority_change INT REFERENCES Fproject.ticket_priorities(id), -- Optional reference to a new priority
+                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- The date and time when the comment was made
 );
 
 -- Creating 'notifications' table
 CREATE TABLE Fproject.notifications (
-    id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES Fproject."user"(id),
-    ticket_id INT REFERENCES Fproject.ticket(id),
-    comment_id INT REFERENCES Fproject.ticket_comment(id) NULL,
-    notification_type VARCHAR, -- e.g., 'status_change', 'new_comment', 'ticket_assigned'
-    message TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    read BOOLEAN DEFAULT FALSE -- To track whether the notification has been read
+                                        id SERIAL PRIMARY KEY,
+                                        user_id INT REFERENCES Fproject."user"(id),
+                                        ticket_id INT REFERENCES Fproject.ticket(id),
+                                        comment_id INT REFERENCES Fproject.ticket_comment(id) NULL,
+                                        notification_type VARCHAR, -- e.g., 'status_change', 'new_comment', 'ticket_assigned'
+                                        message TEXT,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                        read BOOLEAN DEFAULT FALSE -- To track whether the notification has been read
 );
 CREATE TABLE Fproject.event_store (
-    event_id SERIAL PRIMARY KEY,
-    event_type VARCHAR NOT NULL,
-    aggregate_type VARCHAR NOT NULL, -- 'ticket' for ticket-related events
-    aggregate_id INT NOT NULL, -- The ticket ID to which the event relates
-    payload JSON NOT NULL, -- Detailed event data (flexible structure)
-    user_id INT REFERENCES Fproject."user"(id), -- The user responsible for the event
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                                      event_id SERIAL PRIMARY KEY,
+                                      event_type VARCHAR NOT NULL,
+                                      aggregate_type VARCHAR NOT NULL, -- 'ticket' for ticket-related events
+                                      aggregate_id INT NOT NULL, -- The ticket ID to which the event relates
+                                      payload JSON NOT NULL, -- Detailed event data (flexible structure)
+                                      user_id INT REFERENCES Fproject."user"(id), -- The user responsible for the event
+                                      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Fproject.user_status (
-    id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES Fproject."user"(id),
-    status VARCHAR default 'Available',
-    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    UNIQUE(user_id, start_date, end_date) -- Ensures that there are no overlapping statuses for a user (data integrity)
+                                      id SERIAL PRIMARY KEY,
+                                      user_id INT REFERENCES Fproject."user"(id),
+                                      status VARCHAR default 'Available',
+                                      start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+                                      end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+                                      UNIQUE(user_id, start_date, end_date) -- Ensures that there are no overlapping statuses for a user (data integrity)
 );
 
 CREATE TABLE Fproject.user_status_audit (
-    id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES Fproject."user"(id),
-    old_status VARCHAR,
-    new_status VARCHAR,
-    changed_by_user_id INT REFERENCES Fproject."user"(id),
-    change_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                                            id SERIAL PRIMARY KEY,
+                                            user_id INT REFERENCES Fproject."user"(id),
+                                            old_status VARCHAR,
+                                            new_status VARCHAR,
+                                            changed_by_user_id INT REFERENCES Fproject."user"(id),
+                                            change_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 ---------------------------------------------------------------------------------
-    -- Indexes
+-- Indexes
 
 -- Index for searching tickets by user details
 CREATE INDEX idx_user_details ON Fproject."user"(f_name, l_name);
@@ -219,15 +219,15 @@ CREATE INDEX idx_ticket_comment ON Fproject.ticket_comment USING GIN (to_tsvecto
 
 
 ---------------------------------------------------------------------------------
-    -- Triggers
+-- Triggers
 
 -- Trigger for updating ticket status after 14 days of "verifying" status
 CREATE OR REPLACE FUNCTION update_ticket_status()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     -- Check if the ticket status is 'Verifying' and if two weeks have passed
     IF OLD.status_id = (SELECT id FROM Fproject.ticket_status WHERE status_name = 'Verifying')
-       AND CURRENT_DATE - OLD.updated_at::date >= 14 THEN
+        AND CURRENT_DATE - OLD.updated_at::date >= 14 THEN
         -- Update the ticket status to 'Closed'
         UPDATE Fproject.ticket SET status_id = (SELECT id FROM Fproject.ticket_status WHERE status_name = 'Closed')
         WHERE id = OLD.id;
@@ -237,14 +237,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_update_ticket_status
-AFTER UPDATE ON Fproject.ticket
-FOR EACH ROW
+    AFTER UPDATE ON Fproject.ticket
+    FOR EACH ROW
 EXECUTE FUNCTION update_ticket_status();
 
 
 -- Trigger for new ticket creation
 CREATE OR REPLACE FUNCTION notify_new_ticket()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO Fproject.notifications (user_id, ticket_id, notification_type, message, created_at)
     VALUES (NEW.assigned_to, NEW.id, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP);
@@ -253,14 +253,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_notify_new_ticket
-AFTER INSERT ON Fproject.ticket
-FOR EACH ROW
+    AFTER INSERT ON Fproject.ticket
+    FOR EACH ROW
 EXECUTE FUNCTION notify_new_ticket();
 
 
 -- Trigger for new comments in tickets
 CREATE OR REPLACE FUNCTION notify_new_comment()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO Fproject.notifications (user_id, ticket_id, notification_type, message, created_at)
     VALUES (NEW.user_id, NEW.ticket_id, 'New Comment', 'A new comment has been added to your ticket.', CURRENT_TIMESTAMP);
@@ -269,14 +269,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_notify_new_comment
-AFTER INSERT ON Fproject.ticket_comment
-FOR EACH ROW
+    AFTER INSERT ON Fproject.ticket_comment
+    FOR EACH ROW
 EXECUTE FUNCTION notify_new_comment();
 
 
 -- Trigger for updating the ticket timestamp automatically on comment or status change or manager change or priority change or category change or assigned to change
 CREATE OR REPLACE FUNCTION update_ticket_timestamp()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     UPDATE Fproject.ticket SET updated_at = CURRENT_TIMESTAMP
     WHERE id = NEW.id;
@@ -285,29 +285,29 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_update_ticket_on_status_change
-AFTER UPDATE OF status_id ON Fproject.ticket
-FOR EACH ROW
+    AFTER UPDATE OF status_id ON Fproject.ticket
+    FOR EACH ROW
 EXECUTE FUNCTION update_ticket_timestamp();
 
 CREATE TRIGGER trigger_update_ticket_on_assigned_to_change
-AFTER UPDATE OF assigned_to ON Fproject.ticket
-FOR EACH ROW
+    AFTER UPDATE OF assigned_to ON Fproject.ticket
+    FOR EACH ROW
 EXECUTE FUNCTION update_ticket_timestamp();
 
 CREATE TRIGGER trigger_update_ticket_on_comment
-AFTER INSERT ON Fproject.ticket_comment
-FOR EACH ROW
+    AFTER INSERT ON Fproject.ticket_comment
+    FOR EACH ROW
 EXECUTE FUNCTION update_ticket_timestamp();
 
 CREATE TRIGGER trigger_update_ticket_on_priority_change
-AFTER UPDATE OF priority_id ON Fproject.ticket
-FOR EACH ROW
+    AFTER UPDATE OF priority_id ON Fproject.ticket
+    FOR EACH ROW
 EXECUTE FUNCTION update_ticket_timestamp();
 
 
 -- Trigger for updating the ticket timestamp when the category changes
 CREATE OR REPLACE FUNCTION update_ticket_timestamp_on_category_change()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     -- Update the updated_at timestamp of the ticket when the category_id changes
     IF OLD.category_id IS DISTINCT FROM NEW.category_id THEN
@@ -319,14 +319,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_update_ticket_on_category_change
-AFTER UPDATE OF category_id ON Fproject.ticket
-FOR EACH ROW
+    AFTER UPDATE OF category_id ON Fproject.ticket
+    FOR EACH ROW
 EXECUTE FUNCTION update_ticket_timestamp_on_category_change();
 
 
 -- Function to check and redirect ticket assignment if the initially assigned approver is absent
 CREATE OR REPLACE FUNCTION check_and_redirect_ticket()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 DECLARE
     category_manager_id INT;
     approver_absent BOOLEAN;
@@ -337,11 +337,11 @@ BEGIN
     -- Correctly qualifying the column names with table aliases
     SELECT u.id INTO category_manager_id
     FROM Fproject.user_categories uc
-    JOIN Fproject."user" u ON uc.user_id = u.id
-    JOIN Fproject.role r ON u.role_id = r.id
+             JOIN Fproject."user" u ON uc.user_id = u.id
+             JOIN Fproject.role r ON u.role_id = r.id
     WHERE uc.category_id = NEW.category_id
-    AND r.role_name = 'Manager'
-    AND u.is_fallback_approver = TRUE -- This condition assumes 'is_fallback_approver' flag indicates potential ticket managers
+      AND r.role_name = 'Manager'
+      AND u.is_fallback_approver = TRUE -- This condition assumes 'is_fallback_approver' flag indicates potential ticket managers
     LIMIT 1;
 
     -- Check if the determined manager is absent
@@ -350,7 +350,7 @@ BEGIN
             SELECT 1
             FROM Fproject.user_status
             WHERE user_id = category_manager_id
-            AND now() BETWEEN start_date AND end_date
+              AND now() BETWEEN start_date AND end_date
         );
 
         -- If the manager is present and not absent, assign the ticket to them
@@ -365,7 +365,7 @@ BEGIN
         SELECT 1
         FROM Fproject.user_status
         WHERE user_id = NEW.assigned_to
-        AND now() BETWEEN start_date AND end_date
+          AND now() BETWEEN start_date AND end_date
     );
 
     -- Reassignment logic if initially assigned approver is absent
@@ -374,7 +374,7 @@ BEGIN
             SELECT 1
             FROM Fproject.user_status
             WHERE user_id = NEW.fallback_approver
-            AND now() BETWEEN start_date AND end_date
+              AND now() BETWEEN start_date AND end_date
         ) THEN
             NEW.assigned_to := NEW.fallback_approver;
         ELSE
@@ -382,7 +382,7 @@ BEGIN
             SELECT u.id INTO fallback_user_id
             FROM Fproject."user" u
             WHERE u.is_fallback_approver = TRUE
-            AND u.id NOT IN (
+              AND u.id NOT IN (
                 SELECT us.user_id FROM Fproject.user_status us WHERE now() BETWEEN us.start_date AND us.end_date
             )
             LIMIT 1;
@@ -393,7 +393,7 @@ BEGIN
                 -- Assign to an administrator if no suitable fallback is found
                 SELECT u.id INTO admin_user_id
                 FROM Fproject."user" u
-                JOIN Fproject.role r ON u.role_id = r.id
+                         JOIN Fproject.role r ON u.role_id = r.id
                 WHERE r.role_name = 'Administrator'
                 LIMIT 1;
 
@@ -413,20 +413,20 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER trigger_redirect_new_ticket
-BEFORE INSERT ON Fproject.ticket
-FOR EACH ROW
+    BEFORE INSERT ON Fproject.ticket
+    FOR EACH ROW
 EXECUTE FUNCTION check_and_redirect_ticket();
 
 CREATE TRIGGER trigger_redirect_updated_ticket
-BEFORE UPDATE OF assigned_to ON Fproject.ticket
-FOR EACH ROW
-WHEN (OLD.assigned_to IS DISTINCT FROM NEW.assigned_to)
+    BEFORE UPDATE OF assigned_to ON Fproject.ticket
+    FOR EACH ROW
+    WHEN (OLD.assigned_to IS DISTINCT FROM NEW.assigned_to)
 EXECUTE FUNCTION check_and_redirect_ticket();
 
 
 -- Function to update the user's role after completing the onboarding checklist
 CREATE OR REPLACE FUNCTION update_user_role_after_onboarding()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 DECLARE
     all_items_completed BOOLEAN;
     new_employee_role_id INT := 4;
@@ -436,9 +436,9 @@ BEGIN
     SELECT NOT EXISTS (
         SELECT 1
         FROM Fproject.user_checklist_status ucs
-        JOIN Fproject.checklist_item ci ON ucs.checklist_item_id = ci.id
+                 JOIN Fproject.checklist_item ci ON ucs.checklist_item_id = ci.id
         WHERE ucs.user_id = NEW.user_id
-        AND ucs.is_completed = FALSE
+          AND ucs.is_completed = FALSE
     ) INTO all_items_completed;
 
     -- If all items are completed, update the user's role to 'User'
@@ -453,191 +453,303 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_check_onboarding_completion
-AFTER UPDATE ON Fproject.user_checklist_status
-FOR EACH ROW
+    AFTER UPDATE ON Fproject.user_checklist_status
+    FOR EACH ROW
 EXECUTE FUNCTION update_user_role_after_onboarding();
+
+-- Create a trigger function that will be called when a new user is added
+CREATE OR REPLACE FUNCTION Fproject.populate_user_checklist_status()
+    RETURNS TRIGGER AS $$
+DECLARE
+    userRoleName VARCHAR;
+BEGIN
+    -- Determine the role name of the new user
+    SELECT role_name INTO userRoleName
+    FROM Fproject.role
+    WHERE id = NEW.role_id;
+
+    IF userRoleName != 'New Employee' THEN
+        -- If the user's role is not 'New Employee', mark all checklist items as completed
+        INSERT INTO Fproject.user_checklist_status (user_id, checklist_item_id, is_completed, completed_at)
+        SELECT NEW.id, checklist_item.id, TRUE, CURRENT_TIMESTAMP   -- becasue the user is not a new employee
+        FROM Fproject.checklist_item;
+    ELSE
+        -- If the user's role is 'New Employee', mark all checklist items as not completed
+        INSERT INTO Fproject.user_checklist_status (user_id, checklist_item_id, is_completed, completed_at)
+        SELECT NEW.id, checklist_item.id, FALSE, NULL
+        FROM Fproject.checklist_item;
+    END IF;
+
+    RETURN NEW;
+END;
+$$
+    LANGUAGE plpgsql;
+
+
+
+-- Create a trigger function that will be called when a new checklist item is added
+CREATE OR REPLACE FUNCTION Fproject.update_checklist_template_item()
+    RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if we are inserting a new checklist item
+    IF TG_OP = 'INSERT' THEN
+        -- Insert a new checklist_template_item for each existing checklist_template
+        INSERT INTO Fproject.checklist_template_item (checklist_template_id, checklist_item_id)
+        SELECT id, NEW.id FROM Fproject.checklist_template;
+    ELSIF TG_OP = 'DELETE' THEN
+        -- Remove all associations with the deleted checklist_item from checklist_template_item
+        DELETE FROM Fproject.checklist_template_item WHERE checklist_item_id = OLD.id;
+    END IF;
+
+    -- Return the affected row
+    RETURN NULL; -- Result is ignored since this is an AFTER trigger
+END;
+$$
+    LANGUAGE plpgsql;
+
+-- Create the trigger on the 'checklist_item' table for both INSERT and DELETE operations
+CREATE TRIGGER trigger_update_checklist_template_item
+    AFTER INSERT OR DELETE ON Fproject.checklist_item
+    FOR EACH ROW
+EXECUTE FUNCTION Fproject.update_checklist_template_item();
+
+
+-- Trigger function for handling insertions into checklist_item
+CREATE OR REPLACE FUNCTION Fproject.on_checklist_item_insert()
+    RETURNS TRIGGER AS $$
+BEGIN
+    -- For each checklist_template, insert a new association with the new checklist_item
+    INSERT INTO Fproject.checklist_template_item (checklist_template_id, checklist_item_id)
+    SELECT checklist_template.id, NEW.id
+    FROM Fproject.checklist_template;
+
+    RETURN NEW;
+END;
+$$
+    LANGUAGE plpgsql;
+
+-- Trigger for insertions
+CREATE TRIGGER trigger_checklist_item_insert
+    AFTER INSERT ON Fproject.checklist_item
+    FOR EACH ROW
+EXECUTE FUNCTION Fproject.on_checklist_item_insert();
+
+-- Trigger function for handling deletions from checklist_item
+CREATE OR REPLACE FUNCTION Fproject.on_checklist_item_delete()
+    RETURNS TRIGGER AS $$
+BEGIN
+    -- Delete associations with the removed checklist_item from checklist_template_item
+    DELETE FROM Fproject.checklist_template_item WHERE checklist_item_id = OLD.id;
+
+    RETURN OLD;
+END;
+$$
+    LANGUAGE plpgsql;
+
+-- Trigger for deletions
+CREATE TRIGGER trigger_checklist_item_delete
+    AFTER DELETE ON Fproject.checklist_item
+    FOR EACH ROW
+EXECUTE FUNCTION Fproject.on_checklist_item_delete();
+
 
 
 ---------------------------------------------------------------------------------
-    -- Inserting sample data
+-- Inserting sample data
 
 INSERT INTO Fproject.employment_status (employment_name) VALUES
-('Employee'),
-('Contractor'),
-('Student/Intern'),
-('Other');
+                                                             ('Employee'),
+                                                             ('Contractor'),
+                                                             ('Student/Intern'),
+                                                             ('Other');
 
 INSERT INTO Fproject.role (role_name, role_description) VALUES
-('Administrator', 'Full access to all features'),
-('Manager', 'Can manage tickets and users that are assigned to his projects'),
-('User', 'Can create and comment on own tickets'),
-('New Employee', 'Limited access for new employees till they complete the onboarding process');
+                                                            ('Administrator', 'Full access to all features'),
+                                                            ('Manager', 'Can manage tickets and users that are assigned to his projects'),
+                                                            ('User', 'Can create and comment on own tickets'),
+                                                            ('New Employee', 'Limited access for new employees till they complete the onboarding process');
 
 
 INSERT INTO Fproject.department (dep_name) VALUES
-('IT'),
-('HR'),
-('Finance');
+                                               ('IT'),
+                                               ('HR'),
+                                               ('Finance');
 
 INSERT INTO Fproject.position (pos_name) VALUES
-('Software Engineer'),
-('Project Manager'),
-('Business Analyst'),
-('QA Engineer'),
-('DevOps Engineer'),
-('Data Analyst'),
-('UI/UX Designer'),
-('Technical Writer'),
-('Scrum Master'),
-('Designer'),
-('System Administrator'),
-('Network Administrator'),
-('Database Administrator'),
-('Security Analyst'),
-('Help Desk Technician'),
-('IT Support Specialist'),
-('IT Manager'),
-('HR Manager'),
-('Finance Manager');
+                                             ('Software Engineer'),
+                                             ('Project Manager'),
+                                             ('Business Analyst'),
+                                             ('QA Engineer'),
+                                             ('DevOps Engineer'),
+                                             ('Data Analyst'),
+                                             ('UI/UX Designer'),
+                                             ('Technical Writer'),
+                                             ('Scrum Master'),
+                                             ('Designer'),
+                                             ('System Administrator'),
+                                             ('Network Administrator'),
+                                             ('Database Administrator'),
+                                             ('Security Analyst'),
+                                             ('Help Desk Technician'),
+                                             ('IT Support Specialist'),
+                                             ('IT Manager'),
+                                             ('HR Manager'),
+                                             ('Finance Manager');
 
 INSERT INTO Fproject.certificates (certificate_name, is_permanent, certificate_valid_from, certificate_valid_till) VALUES
-('AWS Certified Solutions Architect', TRUE, '2020-01-01', '2025-01-01'),
-('Microsoft Certified: Azure Administrator Associate', TRUE, '2020-01-01', '2025-01-01'),
-('Certified ScrumMaster', TRUE, '2020-01-01', '2025-01-01'),
-('Certified Information Systems Security Professional (CISSP)', TRUE, '2020-01-01', '2025-01-01'),
-('Certified Information Systems Auditor (CISA)', TRUE, '2020-01-01', '2025-01-01'),
-('Certified Information Security Manager (CISM)', TRUE, '2020-01-01', '2025-01-01'),
-('Certified Ethical Hacker (CEH)', TRUE, '2020-01-01', '2025-01-01'),
-('CompTIA Security+', TRUE, '2020-01-01', '2025-01-01'),
-('Certified Information Systems Security Professional (CISSP)', TRUE, '2020-01-01', '2025-01-01'),
-('Certified Information Systems Auditor (CISA)', TRUE, '2020-01-01', '2025-01-01'),
-('Certified Information Security Manager (CISM)', TRUE, '2020-01-01', '2025-01-01'),
-('Certified Ethical Hacker (CEH)', TRUE, '2020-01-01', '2025-01-01'),
-('CompTIA Security+', TRUE, '2020-01-01', '2025-01-01');
+                                                                                                                       ('AWS Certified Solutions Architect', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Microsoft Certified: Azure Administrator Associate', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified ScrumMaster', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified Information Systems Security Professional (CISSP)', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified Information Systems Auditor (CISA)', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified Information Security Manager (CISM)', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified Ethical Hacker (CEH)', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('CompTIA Security+', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified Information Systems Security Professional (CISSP)', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified Information Systems Auditor (CISA)', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified Information Security Manager (CISM)', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('Certified Ethical Hacker (CEH)', TRUE, '2020-01-01', '2025-01-01'),
+                                                                                                                       ('CompTIA Security+', TRUE, '2020-01-01', '2025-01-01');
 
 INSERT INTO Fproject.ticket_status (status_name, color) VALUES
-('Open', 16711680), -- Red
-('In Progress', 16776960), -- Yellow
-('Verifying', 16776960), -- Yellow
-('Rejected', 255), -- White
-('Closed', 65280); -- Green
+                                                            ('Open', 16711680), -- Red
+                                                            ('In Progress', 16776960), -- Yellow
+                                                            ('Verifying', 16776960), -- Yellow
+                                                            ('Rejected', 255), -- White
+                                                            ('Closed', 65280); -- Green
 
 INSERT INTO Fproject.ticket_priorities (priority_name, color) VALUES
-('Low', 65280), -- Green
-('Medium', 16776960), -- Yellow
-('High', 167506), -- Orange
-('Urgent', 16711680); -- Red
+                                                                  ('Low', 65280), -- Green
+                                                                  ('Medium', 16776960), -- Yellow
+                                                                  ('High', 167506), -- Orange
+                                                                  ('Urgent', 16711680); -- Red
 
 INSERT INTO Fproject.categories (category_name) VALUES
-('Gendalf'),
-('CoolChip'),
-('Banana');
+                                                    ('Gendalf'),
+                                                    ('CoolChip'),
+                                                    ('Banana');
 
 INSERT INTO Fproject.permissions (permission_name) VALUES
-('Read'),
-('Read and Write'),
-('None');
+                                                       ('Read'),
+                                                       ('Read and Write'),
+                                                       ('None');
 
 INSERT INTO Fproject."user" (WBI, f_name, l_name, email, role_id, employment_status_id, password_hash, is_fallback_approver) VALUES
-('WBI123', 'John', 'Doe', 'test@test.com', 1, 1, 'password', FALSE),
-('WBI456', 'Jane', 'Doe', 'test2@test.com', 2, 1, 'password', FALSE),
-('WBI789', 'Alice', 'Smith', 'test3@test.com', 3, 1, 'password', TRUE),
-('WBI101', 'Bob', 'Johnson', 'test4@test.com', 3, 1, 'password', FALSE),
-('WBI107', 'Bob', 'Johnson', 'test6@test.com', 4, 1, 'password', FALSE);
+                                                                                                                                 ('WBI123', 'John', 'Doe', 'test@test.com', 1, 1, 'password', FALSE),
+                                                                                                                                 ('WBI456', 'Jane', 'Doe', 'test2@test.com', 2, 1, 'password', FALSE),
+                                                                                                                                 ('WBI789', 'Alice', 'Smith', 'test3@test.com', 3, 1, 'password', TRUE),
+                                                                                                                                 ('WBI101', 'Bob', 'Johnson', 'test4@test.com', 3, 1, 'password', FALSE),
+                                                                                                                                 ('WBI107', 'Bob', 'Johnson', 'test6@test.com', 4, 1, 'password', FALSE);
 
 
 INSERT INTO Fproject.checklist_template (checklist_name, role_id) VALUES
-('Onboarding Checklist', 4); -- New Employee
+    ('Onboarding Checklist', 4); -- New Employee
 
 INSERT INTO Fproject.checklist_item (item_description) VALUES
-('Complete HR Training'),
-('Setup Workstation'),
-('Review Safety Protocol');
+                                                           ('Complete HR Training'),
+                                                           ('Setup Workstation'),
+                                                           ('Review Safety Protocol'),
+                                                           ('Install any necessary software and tools required for your role, such as IDEs, version control systems, and communication tools'),
+                                                           ('Connect the computer to the network and log in using the provided credentials'),
+                                                           ('The IT department will provide you with a company laptop or desktop computer'),
+                                                           ('Customize your workspace settings, such as display resolution, keyboard and mouse preferences, and browser settings'),
+                                                           ('Familiarize yourself with the offices fire safety plan, including evacuation routes and assembly points'),
+                                                           ('Know the location of fire extinguishers and how to use them in case of an emergency'),
+                                                           ('Participate in regular fire drills to practice evacuation procedures'),
+                                                           ('Do not overload electrical outlets or use damaged electrical cords'),
+                                                           ('Keep liquids away from electrical equipment to avoid spills and potential electrical hazards'),
+                                                           ('Report any electrical issues or malfunctions to the facilities team immediately'),
+                                                           ('Adjust your chair, desk, and computer monitor to maintain proper posture and reduce strain on your neck, back, and wrists'),
+                                                           ('Take regular breaks to stretch and rest your eyes, especially when working for extended periods'),
+                                                           ('Attend the companys HR orientation session to learn about policies, benefits, and company culture'),
+                                                           ('Review and acknowledge the employee handbook, which outlines the companys rules, regulations, and expectations'),
+                                                           ('Complete any required training modules, such as diversity and inclusion, sexual harassment prevention, or data privacy and security');
+
 
 INSERT INTO Fproject.checklist_template_item (checklist_template_id, checklist_item_id) VALUES
-(1, 1),
-(1, 2),
-(1, 3);
+                                                                                            (1, 1),
+                                                                                            (1, 2),
+                                                                                            (1, 3);
 
 INSERT INTO Fproject.user_checklist_status (user_id, checklist_item_id, is_completed, completed_at) VALUES
-(5, 1, TRUE, CURRENT_TIMESTAMP),
-(5, 2, TRUE, CURRENT_TIMESTAMP),
-(5, 3, FALSE, NULL);
+                                                                                                        (5, 1, TRUE, CURRENT_TIMESTAMP),
+                                                                                                        (5, 2, TRUE, CURRENT_TIMESTAMP),
+                                                                                                        (5, 3, FALSE, NULL);
 
 INSERT INTO Fproject.user_categories (user_id, category_id, permission_id) VALUES
-(1, 1, 2), -- Full access
-(1, 2, 2), -- Full access
-(1, 3, 2), -- Full access
-(2, 1, 3), -- No access
-(2, 2, 3), -- No access
-(2, 3, 2), -- Full access
-(3, 1, 2), -- Full access
-(3, 2, 1), -- Read-only
-(3, 3, 1); -- Read-only
+                                                                               (1, 1, 2), -- Full access
+                                                                               (1, 2, 2), -- Full access
+                                                                               (1, 3, 2), -- Full access
+                                                                               (2, 1, 3), -- No access
+                                                                               (2, 2, 3), -- No access
+                                                                               (2, 3, 2), -- Full access
+                                                                               (3, 1, 2), -- Full access
+                                                                               (3, 2, 1), -- Read-only
+                                                                               (3, 3, 1); -- Read-only
 
 INSERT INTO Fproject.ticket (subject, content, status_id, priority_id, user_id, created_at, updated_at, assigned_to, category_id) VALUES
-('New Ticket', 'This is a new ticket', 1, 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, 1),
-('Another Ticket', 'This is another ticket', 1, 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, 2),
-('Third Ticket', 'This is a third ticket', 1, 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, 3);
+                                                                                                                                      ('New Ticket', 'This is a new ticket', 1, 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, 1),
+                                                                                                                                      ('Another Ticket', 'This is another ticket', 1, 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, 2),
+                                                                                                                                      ('Third Ticket', 'This is a third ticket', 1, 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 2, 3);
 
 INSERT INTO Fproject.ticket_comment (ticket_id, user_id, comment, status_change, priority_change, created_at) VALUES
-(1, 1, 'This is a comment', 1, 1, CURRENT_TIMESTAMP),
-(1, 2, 'This is another comment', 1, 1, CURRENT_TIMESTAMP),
-(2, 2, 'This is a comment', 1, 1, CURRENT_TIMESTAMP),
-(3, 1, 'This is a comment', 1, 1, CURRENT_TIMESTAMP);
+                                                                                                                  (1, 1, 'This is a comment', 1, 1, CURRENT_TIMESTAMP),
+                                                                                                                  (1, 2, 'This is another comment', 1, 1, CURRENT_TIMESTAMP),
+                                                                                                                  (2, 2, 'This is a comment', 1, 1, CURRENT_TIMESTAMP),
+                                                                                                                  (3, 1, 'This is a comment', 1, 1, CURRENT_TIMESTAMP);
 
 INSERT INTO Fproject.notifications (user_id, ticket_id, notification_type, message, created_at) VALUES
-(2, 1, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP),
-(2, 2, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP),
-(2, 3, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP);
+                                                                                                    (2, 1, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP),
+                                                                                                    (2, 2, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP),
+                                                                                                    (2, 3, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP);
 
 INSERT INTO Fproject.event_store (event_type, aggregate_type, aggregate_id, payload, user_id)
 VALUES
-(
-    'TicketUpdated', -- event_type
-    'ticket', -- aggregate_type
-    1, -- aggregate_id: ticket ID
-    '{"comment": "This is a new comment"}', -- payload: Example changes
-    1 -- user_id: Assuming the ID of the user who updated the ticket is 2
-),
-(
-    'TicketCommentAdded', -- event_type
-    'ticket', -- aggregate_type
-    2, -- aggregate_id: ticket ID
-    '{"comment": "This is a new comment"}', -- payload: Example comment data
-    3 -- user_id: Assuming the ID of the user who added the comment is 1
-);
+    (
+        'TicketUpdated', -- event_type
+        'ticket', -- aggregate_type
+        1, -- aggregate_id: ticket ID
+        '{"comment": "This is a new comment"}', -- payload: Example changes
+        1 -- user_id: Assuming the ID of the user who updated the ticket is 2
+    ),
+    (
+        'TicketCommentAdded', -- event_type
+        'ticket', -- aggregate_type
+        2, -- aggregate_id: ticket ID
+        '{"comment": "This is a new comment"}', -- payload: Example comment data
+        3 -- user_id: Assuming the ID of the user who added the comment is 1
+    );
 
 
 INSERT INTO Fproject.user_status (user_id, status, start_date, end_date) VALUES
-(4, 'Out of Office', '2021-01-01', '2021-01-10'),
-(2, 'Busy', '2021-01-01', '2021-01-10');
+                                                                             (4, 'Out of Office', '2021-01-01', '2021-01-10'),
+                                                                             (2, 'Busy', '2021-01-01', '2021-01-10');
 
 INSERT INTO Fproject.user_status_audit (user_id, old_status, new_status, changed_by_user_id) VALUES
-(4, 'Available', 'Out of Office', 3),
-(2, 'Available', 'Busy', 3);
+                                                                                                 (4, 'Available', 'Out of Office', 3),
+                                                                                                 (2, 'Available', 'Busy', 3);
 
 INSERT INTO Fproject.department_user (department_id, user_id) VALUES
-(1, 1),
-(2, 2),
-(3, 3),
-(1, 4),
-(2, 5),
-(3, 5);
+                                                                  (1, 1),
+                                                                  (2, 2),
+                                                                  (3, 3),
+                                                                  (1, 4),
+                                                                  (2, 5),
+                                                                  (3, 5);
 
 INSERT INTO Fproject.position_user (position_id, user_id) VALUES
-(1, 1),
-(2, 2),
-(3, 3);
+                                                              (1, 1),
+                                                              (2, 2),
+                                                              (3, 3);
 
 INSERT INTO Fproject.certificates_user (certificate_id, user_id) VALUES
-(1, 1),
-(2, 2),
-(3, 3);
+                                                                     (1, 1),
+                                                                     (2, 2),
+                                                                     (3, 3);
 
 
 ---------------------------------------------------------------------------------
-    -- Views
+-- Views
 
 -- View to get the list of managers and the categories they are assigned to
 CREATE OR REPLACE VIEW Fproject.manager_category_assignments AS
@@ -648,11 +760,11 @@ SELECT
     c.category_name
 FROM
     Fproject.user_categories uc
-JOIN
+        JOIN
     Fproject."user" u ON uc.user_id = u.id
-JOIN
+        JOIN
     Fproject.categories c ON uc.category_id = c.category_id
-JOIN
+        JOIN
     Fproject.role r ON u.role_id = r.id
 WHERE
     r.role_name = 'Manager';
@@ -660,14 +772,14 @@ WHERE
 
 -- View the fallback approvers and managers who are available
 CREATE OR REPLACE VIEW Fproject.available_fallback_approvers AS
-    SELECT u.id, u.f_name, u.l_name
-    FROM Fproject."user" u
-    WHERE u.is_fallback_approver = TRUE
-    AND u.id NOT IN (
-        SELECT us.user_id
-        FROM Fproject.user_status us
-        WHERE now() BETWEEN us.start_date AND us.end_date
-    );
+SELECT u.id, u.f_name, u.l_name
+FROM Fproject."user" u
+WHERE u.is_fallback_approver = TRUE
+  AND u.id NOT IN (
+    SELECT us.user_id
+    FROM Fproject.user_status us
+    WHERE now() BETWEEN us.start_date AND us.end_date
+);
 
 -- View shows the number of tickets in each status, giving you a quick overview of how many tickets are open, closed, in progress, etc.
 CREATE OR REPLACE VIEW Fproject.ticket_volumes_by_status AS
@@ -676,7 +788,7 @@ SELECT
     COUNT(t.id) AS total_tickets
 FROM
     Fproject.ticket_status ts
-LEFT JOIN
+        LEFT JOIN
     Fproject.ticket t ON ts.id = t.status_id
 GROUP BY
     ts.status_name;
@@ -689,7 +801,7 @@ FROM
     Fproject.ticket t
 WHERE
     t.status_id = (SELECT id FROM Fproject.ticket_status WHERE status_name = 'Closed')
-    AND t.completed_at IS NOT NULL;
+  AND t.completed_at IS NOT NULL;
 
 -- View to get the total number of tickets in each category
 CREATE OR REPLACE VIEW Fproject.tickets_per_category AS
@@ -698,7 +810,7 @@ SELECT
     COUNT(t.id) AS total_tickets
 FROM
     Fproject.categories c
-LEFT JOIN
+        LEFT JOIN
     Fproject.ticket t ON c.category_id = t.category_id
 GROUP BY
     c.category_name;
@@ -711,7 +823,7 @@ SELECT
     COUNT(t.id) AS total_tickets_created
 FROM
     Fproject."user" u
-JOIN
+        JOIN
     Fproject.ticket t ON u.id = t.user_id
 GROUP BY
     u.id;
@@ -730,8 +842,50 @@ SELECT
 FROM
     Fproject.permissions;
 
+
+CREATE VIEW ticketsByRole AS
+SELECT
+    t.id,
+    t.subject,
+    t.content,
+    t.file_data,
+    ts.status_name AS ticket_status,
+    tp.priority_name AS ticket_priority,
+    u.f_name AS user_first_name,
+    u.l_name AS user_last_name,
+    u.email AS user_email,
+    r.role_name AS user_role,
+    es.employment_name AS user_employment_status,
+    c.category_name AS ticket_category,
+    t.created_at,
+    t.updated_at,
+    t.completed_at,
+    assigned.f_name AS assigned_to_first_name,
+    assigned.l_name AS assigned_to_last_name,
+    fallback.f_name AS fallback_approver_first_name,
+    fallback.l_name AS fallback_approver_last_name
+FROM
+    Fproject.ticket t
+        JOIN Fproject.ticket_status ts ON t.status_id = ts.id
+        JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
+        JOIN Fproject."user" u ON t.user_id = u.id
+        JOIN Fproject.role r ON u.role_id = r.id
+        JOIN Fproject.employment_status es ON u.employment_status_id = es.id
+        JOIN Fproject.categories c ON t.category_id = c.category_id
+        LEFT JOIN Fproject."user" assigned ON t.assigned_to = assigned.id
+        LEFT JOIN Fproject."user" fallback ON t.fallback_approver = fallback.id
+WHERE
+    (r.role_name = 'Administrator') OR
+    (r.role_name = 'Manager' AND EXISTS (
+        SELECT 1
+        FROM Fproject.user_categories uc
+        WHERE uc.user_id = u.id AND uc.category_id = t.category_id
+    )) OR
+    (t.user_id = u.id);
+
+
 ---------------------------------------------------------------------------------
-    -- Stored Procedures
+-- Stored Procedures
 
 -- Stored procedure to create a new user
 CREATE OR REPLACE PROCEDURE Fproject.CreateNewUser(
@@ -743,7 +897,7 @@ CREATE OR REPLACE PROCEDURE Fproject.CreateNewUser(
     p_role_name VARCHAR DEFAULT 'Newcommer', -- Default role
     p_employment_name VARCHAR DEFAULT 'Employee' -- Default employment status
 )
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_role_id INT;
     v_employment_status_id INT;
@@ -782,7 +936,7 @@ CREATE OR REPLACE PROCEDURE Fproject.UpdateUser(
     p_role_name VARCHAR default NULL,
     p_employment_name VARCHAR default NULL
 )
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_role_id INT;
     v_employment_status_id INT;
@@ -823,7 +977,7 @@ $$;
 
 -- Stored procedure to delete a user
 CREATE OR REPLACE PROCEDURE Fproject.DeleteUser(p_user_id INT)
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 BEGIN
     DELETE FROM Fproject."user" WHERE id = p_user_id;
 END;
@@ -836,7 +990,7 @@ CREATE OR REPLACE PROCEDURE Fproject.EditCategoryAccess(
     p_category_id INT,
     p_permission_name VARCHAR
 )
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_permission_id INT;
 BEGIN
@@ -870,7 +1024,7 @@ CREATE OR REPLACE PROCEDURE Fproject.CreateTicket(
     p_status_name VARCHAR DEFAULT 'Open',
     p_priority_name VARCHAR DEFAULT 'Medium'
 )
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_status_id INT;
     v_priority_id INT;
@@ -907,7 +1061,7 @@ CREATE OR REPLACE PROCEDURE Fproject.UpdateTicket(
     p_file_data BYTEA DEFAULT NULL,
     p_is_manager_or_admin BOOLEAN DEFAULT FALSE
 )
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_status_id INT;
     v_priority_id INT;
@@ -979,7 +1133,7 @@ $$;
 
 -- Stored procedure to close a ticket or delete it if it's within 5 minutes of creation
 CREATE OR REPLACE PROCEDURE Fproject.CloseOrDeleteTicket(p_ticket_id INT)
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_closed_status_id INT;
     v_created_at TIMESTAMP;
@@ -1020,24 +1174,76 @@ BEGIN
 END;
 $$;
 
+-- Stored procedure to get all tickets for a user based on their role
+CREATE OR REPLACE FUNCTION Fproject.get_user_tickets(p_user_id INT)
+    RETURNS TABLE(
+                     ticket_id INT,
+                     subject VARCHAR,
+                     content TEXT,
+                     status_name VARCHAR,
+                     priority_name VARCHAR,
+                     category_name VARCHAR,
+                     created_at TIMESTAMP,
+                     updated_at TIMESTAMP,
+                     completed_at TIMESTAMP
+                 ) AS $$
+DECLARE
+    user_role VARCHAR;
+BEGIN
+    -- Determine the role of the user
+    SELECT r.role_name INTO user_role
+    FROM Fproject."user" u
+             JOIN Fproject.role r ON u.role_id = r.id
+    WHERE u.id = p_user_id;
 
+    IF user_role = 'Administrator' THEN
+        RETURN QUERY
+            SELECT t.id, t.subject, t.content, ts.status_name, tp.priority_name, c.category_name, t.created_at, t.updated_at, t.completed_at
+            FROM Fproject.ticket t
+                     JOIN Fproject.ticket_status ts ON t.status_id = ts.id
+                     JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
+                     JOIN Fproject.categories c ON t.category_id = c.category_id;
+    ELSIF user_role = 'Manager' THEN
+        RETURN QUERY
+            SELECT t.id, t.subject, t.content, ts.status_name, tp.priority_name, c.category_name, t.created_at, t.updated_at, t.completed_at
+            FROM Fproject.ticket t
+                     JOIN Fproject.ticket_status ts ON t.status_id = ts.id
+                     JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
+                     JOIN Fproject.categories c ON t.category_id = c.category_id
+            WHERE t.category_id IN (
+                SELECT category_id
+                FROM Fproject.user_categories uc
+                WHERE uc.user_id = p_user_id
+            );
+    ELSE
+        RETURN QUERY
+            SELECT t.id, t.subject, t.content, ts.status_name, tp.priority_name, c.category_name, t.created_at, t.updated_at, t.completed_at
+            FROM Fproject.ticket t
+                     JOIN Fproject.ticket_status ts ON t.status_id = ts.id
+                     JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
+                     JOIN Fproject.categories c ON t.category_id = c.category_id
+            WHERE t.user_id = p_user_id;
+    END IF;
+END;
+$$
+    LANGUAGE plpgsql;
 
 
 
 ---------------------------------------------------------------------------------
-    -- Test triggers and stored procedures and views
+-- Test triggers and stored procedures and views
 
 BEGIN;
 -- Test the 'CreateNewUser' stored procedure
 CALL Fproject.CreateNewUser(
-    'userWBI', 'Test', 'User', 'test.user@example.com', 'hashed_password', 'New Employee', 'Employee'
-);
+        'userWBI', 'Test', 'User', 'test.user@example.com', 'hashed_password', 'New Employee', 'Employee'
+     );
 SELECT * FROM Fproject."user" WHERE email = 'test.user@example.com';
 
 -- Test the 'UpdateUser' stored procedure
 CALL Fproject.UpdateUser(
-    12,'TestUpdated', 'UserUpdated', 'updated.user@example.com', NULL, NULL
-);
+        12,'TestUpdated', 'UserUpdated', 'updated.user@example.com', NULL, NULL
+     );
 SELECT * FROM Fproject."user" WHERE email = 'updated.user@example.com';
 
 -- Test the 'DeleteUser' stored procedure
@@ -1058,29 +1264,29 @@ BEGIN;
 -- Simulating the creation of a new ticket
 
 CALL Fproject.CreateTicket(
-    'Test Subject',
-    'Test Content',
-    1, -- Assuming user_id 1 exists
-    1, -- Assuming category_id 1 exists
-    'Open',
-    'Medium'
-);
+        'Test Subject',
+        'Test Content',
+        1, -- Assuming user_id 1 exists
+        1, -- Assuming category_id 1 exists
+        'Open',
+        'Medium'
+     );
 SELECT * FROM Fproject.ticket WHERE subject = 'Test Subject';
 
 -- First update to the ticket (assuming ticket_id 1 exists)
 
 CALL Fproject.UpdateTicket(
-    4, -- ticket_id
-    1, -- user_id
-    'In Progress', -- new_status
-    NULL, -- new_priority (not updating)
-    NULL, -- new_assigned_to (not updating)
-    NULL, -- new_fallback_approver (not updating)
-    NULL, -- new_category_id (not updating)
-    'Initial Comment', -- comment
-    NULL, -- file_data (not updating)
-    TRUE -- is_manager_or_admin
-);
+        4, -- ticket_id
+        1, -- user_id
+        'In Progress', -- new_status
+        NULL, -- new_priority (not updating)
+        NULL, -- new_assigned_to (not updating)
+        NULL, -- new_fallback_approver (not updating)
+        NULL, -- new_category_id (not updating)
+        'Initial Comment', -- comment
+        NULL, -- file_data (not updating)
+        TRUE -- is_manager_or_admin
+     );
 
 SELECT status_id, priority_id FROM Fproject.ticket WHERE id = 4;
 
@@ -1088,17 +1294,17 @@ SELECT status_id, priority_id FROM Fproject.ticket WHERE id = 4;
 
 
 CALL Fproject.UpdateTicket(
-    4, -- ticket_id
-    1, -- user_id
-    NULL, -- new_status (not updating)
-    'High', -- new_priority
-    NULL, -- new_assigned_to (not updating)
-    NULL, -- new_fallback_approver (not updating)
-    NULL, -- new_category_id (not updating)
-    'Follow-up Comment', -- comment
-    '\\xdeadbeef', -- file_data (simulating binary data)
-    TRUE -- is_manager_or_admin
-);
+        4, -- ticket_id
+        1, -- user_id
+        NULL, -- new_status (not updating)
+        'High', -- new_priority
+        NULL, -- new_assigned_to (not updating)
+        NULL, -- new_fallback_approver (not updating)
+        NULL, -- new_category_id (not updating)
+        'Follow-up Comment', -- comment
+        '\\xdeadbeef', -- file_data (simulating binary data)
+        TRUE -- is_manager_or_admin
+     );
 
 
 -- Retrieving the latest status and priority of the ticket for verification
@@ -1110,7 +1316,7 @@ SELECT * FROM Fproject.event_store ORDER BY event_id DESC LIMIT 2;
 -- Closing the ticket (assuming ticket_id 1 exists)
 
 
-CALL Fproject.CloseTicket(4);
+--CALL Fproject.CloseTicket(4);
 
 
 ROLLBACK;
@@ -1124,178 +1330,178 @@ SELECT * FROM Fproject.available_fallback_approvers;
 BEGIN;
 -- Test the 'CreateNewUser' stored procedure with invalid role
 CALL Fproject.CreateNewUser(
-    p_WBI => 'uniqueWBI',
-    p_f_name => 'Test',
-    p_l_name => 'User',
-    p_email => 'test.user@fproject.com',
-    p_password_hash => 'hashed_password',
-    p_role_name => 'NonExistentRole', -- This role does not exist
-    p_employment_name => 'Employee'
-);
+        p_WBI => 'uniqueWBI',
+        p_f_name => 'Test',
+        p_l_name => 'User',
+        p_email => 'test.user@fproject.com',
+        p_password_hash => 'hashed_password',
+        p_role_name => 'NonExistentRole', -- This role does not exist
+        p_employment_name => 'Employee'
+     );
 
 
 
 -- Test the 'CreateNewUser' stored procedure with invalid employment status
 CALL Fproject.CreateNewUser(
-    p_WBI => 'uniqueWBI2',
-    p_f_name => 'Test',
-    p_l_name => 'User',
-    p_email => 'test2.user@fproject.com',
-    p_password_hash => 'hashed_password',
-    p_role_name => 'Employee', -- Assuming this role exists
-    p_employment_name => 'NonExistentStatus' -- This employment status does not exist
-);
+        p_WBI => 'uniqueWBI2',
+        p_f_name => 'Test',
+        p_l_name => 'User',
+        p_email => 'test2.user@fproject.com',
+        p_password_hash => 'hashed_password',
+        p_role_name => 'Employee', -- Assuming this role exists
+        p_employment_name => 'NonExistentStatus' -- This employment status does not exist
+     );
 
 -- Test the 'UpdateUser' stored procedure with invalid role
 CALL Fproject.UpdateUser(
-    p_user_id => 1, -- Use an actual user_id from your users table
-    p_f_name => NULL,
-    p_l_name => NULL,
-    p_email => NULL,
-    p_role_name => 'NonExistentRole', -- This role does not exist
-    p_employment_name => NULL
-);
+        p_user_id => 1, -- Use an actual user_id from your users table
+        p_f_name => NULL,
+        p_l_name => NULL,
+        p_email => NULL,
+        p_role_name => 'NonExistentRole', -- This role does not exist
+        p_employment_name => NULL
+     );
 
 -- Test the 'UpdateUser' stored procedure with invalid employment status
 CALL Fproject.UpdateUser(
-    p_user_id => 1,
-    p_f_name => NULL,
-    p_l_name => NULL,
-    p_email => NULL,
-    p_role_name => NULL,
-    p_employment_name => 'NonExistentStatus' -- This employment status does not exist
-);
+        p_user_id => 1,
+        p_f_name => NULL,
+        p_l_name => NULL,
+        p_email => NULL,
+        p_role_name => NULL,
+        p_employment_name => 'NonExistentStatus' -- This employment status does not exist
+     );
 
 -- Test the 'EditCategoryAccess' stored procedure with invalid user_id
 CALL Fproject.EditCategoryAccess(
-    p_user_id => 284,
-    p_category_id => 1,
-    p_permission_name => 'Read'
-);
+        p_user_id => 284,
+        p_category_id => 1,
+        p_permission_name => 'Read'
+     );
 
 -- Test the 'EditCategoryAccess' stored procedure with invalid category_id
 CALL Fproject.EditCategoryAccess(
-    p_user_id => 1,
-    p_category_id => 999999,
-    p_permission_name => 'Read'
-);
+        p_user_id => 1,
+        p_category_id => 999999,
+        p_permission_name => 'Read'
+     );
 
 -- Test the 'EditCategoryAccess' stored procedure with invalid permission_name
 CALL Fproject.EditCategoryAccess(
-    p_user_id => 1,
-    p_category_id => 1,
-    p_permission_name => 'NonExistentPermission'
-);
+        p_user_id => 1,
+        p_category_id => 1,
+        p_permission_name => 'NonExistentPermission'
+     );
 
 -- Test the 'CreateTicket' stored procedure with invalid status_name
 CALL Fproject.CreateTicket(
-    p_subject => 'Test Ticket with Invalid Status',
-    p_content => 'This is a test ticket with an invalid status_name.',
-    p_user_id => 1,
-    p_category_id => 1,
-    p_status_name => 'NonExistentStatus',
-    p_priority_name => 'Medium'
-);
+        p_subject => 'Test Ticket with Invalid Status',
+        p_content => 'This is a test ticket with an invalid status_name.',
+        p_user_id => 1,
+        p_category_id => 1,
+        p_status_name => 'NonExistentStatus',
+        p_priority_name => 'Medium'
+     );
 
 -- Test the 'CreateTicket' stored procedure with invalid priority_name
 CALL Fproject.CreateTicket(
-    p_subject => 'Test Ticket with Invalid Priority',
-    p_content => 'This is a test ticket with an invalid priority_name.',
-    p_user_id => 1,
-    p_category_id => 1,
-    p_status_name => 'Open',
-    p_priority_name => 'NonExistentPriority'
-);
+        p_subject => 'Test Ticket with Invalid Priority',
+        p_content => 'This is a test ticket with an invalid priority_name.',
+        p_user_id => 1,
+        p_category_id => 1,
+        p_status_name => 'Open',
+        p_priority_name => 'NonExistentPriority'
+     );
 
 -- Test the 'CreateTicket' stored procedure with invalid user_id
 CALL Fproject.CreateTicket(
-    p_subject => 'Test Ticket with Invalid User',
-    p_content => 'This is a test ticket with an invalid user_id.',
-    p_user_id => 999999,
-    p_category_id => 1,
-    p_status_name => 'Open',
-    p_priority_name => 'Medium'
-);
+        p_subject => 'Test Ticket with Invalid User',
+        p_content => 'This is a test ticket with an invalid user_id.',
+        p_user_id => 999999,
+        p_category_id => 1,
+        p_status_name => 'Open',
+        p_priority_name => 'Medium'
+     );
 
 -- Test the 'CreateTicket' stored procedure with invalid category_id
 CALL Fproject.CreateTicket(
-    p_subject => 'Test Ticket with Invalid Category',
-    p_content => 'This is a test ticket with an invalid category_id.',
-    p_user_id => 1,
-    p_category_id => 999999,
-    p_status_name => 'Open',
-    p_priority_name => 'Medium'
-);
+        p_subject => 'Test Ticket with Invalid Category',
+        p_content => 'This is a test ticket with an invalid category_id.',
+        p_user_id => 1,
+        p_category_id => 999999,
+        p_status_name => 'Open',
+        p_priority_name => 'Medium'
+     );
 
 -- Test the 'UpdateTicket' stored procedure with invalid status_name
 CALL Fproject.UpdateTicket(
-    p_ticket_id => 1,
-    p_user_id => 1,
-    p_new_status => 'NonExistentStatus',
-    p_new_priority => NULL,
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_new_category_id => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
+        p_ticket_id => 1,
+        p_user_id => 1,
+        p_new_status => 'NonExistentStatus',
+        p_new_priority => NULL,
+        p_new_assigned_to => NULL,
+        p_new_fallback_approver => NULL,
+        p_new_category_id => NULL,
+        p_comment => NULL,
+        p_file_data => NULL,
+        p_is_manager_or_admin => TRUE
+     );
 
 -- Test the 'UpdateTicket' stored procedure with invalid priority_name
 CALL Fproject.UpdateTicket(
-    p_ticket_id => 1,
-    p_user_id => 1,
-    p_new_status => NULL,
-    p_new_priority => 'NonExistentPriority',
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_new_category_id => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
+        p_ticket_id => 1,
+        p_user_id => 1,
+        p_new_status => NULL,
+        p_new_priority => 'NonExistentPriority',
+        p_new_assigned_to => NULL,
+        p_new_fallback_approver => NULL,
+        p_new_category_id => NULL,
+        p_comment => NULL,
+        p_file_data => NULL,
+        p_is_manager_or_admin => TRUE
+     );
 
 -- Test the 'UpdateTicket' stored procedure with invalid user_id
 CALL Fproject.UpdateTicket(
-    p_ticket_id => 1, -- Use a valid ticket_id
-    p_user_id => 999999, -- This user_id does not exist
-    p_new_status => NULL,
-    p_new_priority => NULL,
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_new_category_id => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
+        p_ticket_id => 1, -- Use a valid ticket_id
+        p_user_id => 999999, -- This user_id does not exist
+        p_new_status => NULL,
+        p_new_priority => NULL,
+        p_new_assigned_to => NULL,
+        p_new_fallback_approver => NULL,
+        p_new_category_id => NULL,
+        p_comment => NULL,
+        p_file_data => NULL,
+        p_is_manager_or_admin => TRUE
+     );
 
 -- Test the 'UpdateTicket' stored procedure with invalid ticket_id
 CALL Fproject.UpdateTicket(
-    p_ticket_id => 999999, -- This ticket_id does not exist
-    p_user_id => 1, -- Use a valid user_id
-    p_new_status => NULL,
-    p_new_priority => NULL,
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_new_category_id => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
+        p_ticket_id => 999999, -- This ticket_id does not exist
+        p_user_id => 1, -- Use a valid user_id
+        p_new_status => NULL,
+        p_new_priority => NULL,
+        p_new_assigned_to => NULL,
+        p_new_fallback_approver => NULL,
+        p_new_category_id => NULL,
+        p_comment => NULL,
+        p_file_data => NULL,
+        p_is_manager_or_admin => TRUE
+     );
 
 -- Test the 'UpdateTicket' stored procedure with invalid category_id
 CALL Fproject.UpdateTicket(
-    p_ticket_id => 1, -- Use a valid ticket_id
-    p_user_id => 1, -- Use a valid user_id
-    p_new_category_id => 999999, -- This category_id does not exist
-    p_new_status => NULL,
-    p_new_priority => NULL,
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
+        p_ticket_id => 1, -- Use a valid ticket_id
+        p_user_id => 1, -- Use a valid user_id
+        p_new_category_id => 999999, -- This category_id does not exist
+        p_new_status => NULL,
+        p_new_priority => NULL,
+        p_new_assigned_to => NULL,
+        p_new_fallback_approver => NULL,
+        p_comment => NULL,
+        p_file_data => NULL,
+        p_is_manager_or_admin => TRUE
+     );
 
 -- Test the 'CloseTicket' stored procedure with invalid ticket_id
 CALL Fproject.CloseorDeleteTicket(999999); -- This ticket_id does not exist

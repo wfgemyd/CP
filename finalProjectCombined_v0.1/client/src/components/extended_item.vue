@@ -1,6 +1,6 @@
 <script setup>
-import {ref, onMounted} from 'vue';
-import axios from 'axios';
+import {onMounted, ref} from 'vue';
+
 
 const props = defineProps({
   ticket: Object,
@@ -9,50 +9,35 @@ const props = defineProps({
     default: false
   }
 });
-
-const ticket_priority = ref({});
-const ticket_status = ref({});
-const required_category = ref({});
-const ticket_manager = ref({});
-const employment_status = ref({});
-const permission_required = ref({});
-const user_role = ref({});
+const ticketDetails = ref({});
+const ticketComments = ref([]);
+const ticketEvents = ref([]);
 
 onMounted(async () => {
   try {
-    // Fetch ticket priorities from the database
-    const priorityResponse = await axios.get('/api/ticket-priorities');
-    ticket_priority.value = priorityResponse.data;
-
-    // Fetch ticket statuses from the database
-    const statusResponse = await axios.get('/api/ticket-statuses');
-    ticket_status.value = statusResponse.data;
-
-    // Fetch required categories from the database
-    const categoryResponse = await axios.get('/api/categories');
-    required_category.value = categoryResponse.data;
-
-    // Fetch ticket managers from the database
-    const managerResponse = await axios.get('/api/ticket-managers');
-    ticket_manager.value = managerResponse.data;
-
-    // Fetch employment statuses from the database
-    const employmentResponse = await axios.get('/api/employment-statuses');
-    employment_status.value = employmentResponse.data;
-
-    // Fetch permission levels from the database
-    const permissionResponse = await axios.get('/api/permissions');
-    permission_required.value = permissionResponse.data;
-
-    // Fetch user roles from the database
-    const roleResponse = await axios.get('/api/user-roles');
-    user_role.value = roleResponse.data;
+    const response = await fetch(`/api/tickets/${props.ticket.id}/details`, {
+      headers: {
+        'Authorization': `${localStorage.getItem('token')}`
+      }
+    });
+    const data = await response.json();
+    ticketDetails.value = data.ticket;
+    ticketComments.value = data.comments;
+    ticketEvents.value = data.events;
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Failed to fetch ticket details:', error);
   }
 });
-</script>
+const ticket_priority = { low: "low", medium: "medium", high: "high", urgent: "urgent"};
+const ticket_status = { open: "open", verifying: "verifying", rejected: "rejected", closed: "closed" };
+const required_category = { gendalf: "gendalf", banana: "banana", coolchip: "coolchip" };
+const ticket_manager = { manager1: "Manager", manager2: "manager2", manager3: "manager3" };
+const employment_status = { contractor: "contractor", fullTime: "full-time", partTime: "part-time", intern: "intern" };
+const permission_required = { read: "read", write: "write"};
+const user_role = { designer: "designer", developer: "developer", manager: "Manager", tester: "tester" };
+const attachment = { none: null };
 
+</script>
 <script>
 
 export default {
@@ -64,12 +49,13 @@ export default {
       isEditing: false,
       selectedFile: null,
       fileUploaded: false,
-      chatMessages: [],
+      chatMessages: [
+        { id: 1, content: "We are checking if the slot is open", isSender: false, timestamp: "Today, 11:15 PM" },
+        { id: 2, content: "Okay, keep me updated", isSender: true, timestamp: "Today, 11:30 PM" },
+        { id: 3, content: "need access to gandalf", isSender: true, timestamp: "Today, 11:35 PM" }
+      ],
       responseMessage: ''
     }
-  },
-  mounted() {
-    this.fetchChatMessages();
   },
   methods: {
     toggleEditing() {
@@ -88,41 +74,13 @@ export default {
         this.fileUploaded = false; // Set fileUploaded to false if no file is selected or size exceeds limit
       }
     },
-    async fetchChatMessages() {
-      try {
-        const response = await axios.get(`/api/tickets/${this.ticket.id}/comments`);
-        this.chatMessages = response.data;
-      } catch (error) {
-        console.error('Error fetching chat messages:', error);
-      }
-    },
-    async submitResponse() {
-      if (this.responseMessage.trim() !== '' || this.selectedFile) {
-        try {
-          const formData = new FormData();
-          formData.append('comment', this.responseMessage);
-          if (this.selectedFile) {
-            formData.append('file', this.selectedFile);
-          }
-
-          await axios.post(`/api/tickets/${this.ticket.id}/comments`, formData);
-          this.responseMessage = '';
-          this.selectedFile = null;
-          this.fileUploaded = false;
-          this.fetchChatMessages();
-        } catch (error) {
-          console.error('Error submitting response:', error);
-        }
-      }
-    }
-    /*
     async submitResponse() {
       if (this.responseMessage.trim() !== '' || this.selectedFile) {
         const newMessage = {
           id: this.chatMessages.length + 1,
           content: this.responseMessage,
           isSender: true,
-          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           attachment: this.selectedFile ? {
             name: this.selectedFile.name,
             type: this.selectedFile.type,
@@ -135,7 +93,6 @@ export default {
         this.fileUploaded = false;
       }
     }
-    */
   }
 }
 </script>
@@ -196,22 +153,22 @@ export default {
           </div>
           <div class="ticket-row">
             <span class="label">Role:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.role || "Developer" }}</div>
+            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.role}}</div>
             <select v-else v-model="ticket.role">
               <option v-for="(label, value) in user_role" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Employment Status:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.employmentStatus || "Contractor" }}</div>
+            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.employmentStatus}}</div>
             <select v-else v-model="ticket.employmentStatus">
               <option v-for="(label, value) in employment_status" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
-          </div>
+        </div>
         <div class="assignedto-detail">
           <span class="label">Assigned to:</span>
-          <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.assignedTo || "Super Manager Patron" }}</div>
+          <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.assignedTo}}</div>
           <select v-else v-model="ticket.assignedTo">
             <option v-for="(label, value) in ticket_manager" :key="value" :value="value">{{ label }}</option>
           </select>
@@ -219,53 +176,55 @@ export default {
 
         <div class="requester-detail">
           <span class="label">Requester Detail:</span>
-          <p>{{ ticket.requester || "Don Patron" }}</p>
+          <p>{{ ticket.requester}}</p>
         </div>
       </div>
 
-    <div class="ticket-details">
+      <div class="ticket-details">
 
-      <div class="ticket-description">
-        <p><span class="label"></span> {{ ticket.description || 'n common usage, randomness is the apparent or actual lack of definite pattern or predictability in information.[1][2] A random sequence of events, symbols or steps often has no order and does not follow an intelligible pattern or combination. Individual random events are, by definition, unpredictable, but if there is a known probability distribution, the frequency of different outcomes over repeated events (or "trials") is predictable.[note 1] For example, when throwing two dice, the outcome of any particular roll is unpredictable, but a sum of 7 will tend to occur twice as often as 4. In this view, randomness is not haphazardness; it is a measure of uncertainty of an outcome.' }}</p>
-        <span class="timestamp">{{ ticket.createdOn }}</span>
-      </div>
-      <div class="table-container">
-      <div class="ticket-chat">
-        <div v-for="message in chatMessages" :key="message.id" class="chat-message" :class="{ 'sender': message.isSender, 'receiver': !message.isSender }">
-          <p>{{ message.content }}</p>
-          <div v-if="message.attachment" class="attachment">
-            <a :href="message.attachment.url" target="_blank" class="attachment-link">
-              <span class="attachment-name">{{ message.attachment.name }}</span>
-              <div class="attachment-preview">
-                <img v-if="message.attachment.type.startsWith('image')" :src="message.attachment.url" alt="Attachment Preview">
-                <embed v-else-if="message.attachment.type === 'application/pdf'" :src="message.attachment.url" type="application/pdf">
-                <video v-else-if="message.attachment.type.startsWith('video')" :src="message.attachment.url" controls></video>
-                <iframe v-else-if="message.attachment.type === 'text/html'" :src="message.attachment.url"></iframe>
-                <pre v-else-if="message.attachment.type.startsWith('text/')" class="text-preview">{{ message.attachment.content }}</pre>
-                <div v-else class="unsupported-preview">
-                  <p>Unsupported file type: {{ message.attachment.type }}</p>
-                </div>
+        <div class="ticket-description">
+          <p><span class="label"></span> {{ticketDetails.content }}</p>
+          <span class="timestamp">{{ ticketDetails.created_at }}</span>
+        </div>
+        <div class="table-container">
+          <div class="ticket-chat">
+            <div v-for="comment in ticketComments" :key="comment.id" class="chat-message">
+              <p>{{ comment.comment }}</p>
+<!--
+              <div v-if="message.attachment" class="attachment">
+                <a :href="message.attachment.url" target="_blank" class="attachment-link">
+                  <span class="attachment-name">{{ message.attachment.name }}</span>
+                  <div class="attachment-preview">
+                    <img v-if="message.attachment.type.startsWith('image')" :src="message.attachment.url" alt="Attachment Preview">
+                    <embed v-else-if="message.attachment.type === 'application/pdf'" :src="message.attachment.url" type="application/pdf">
+                    <video v-else-if="message.attachment.type.startsWith('video')" :src="message.attachment.url" controls></video>
+                    <iframe v-else-if="message.attachment.type === 'text/html'" :src="message.attachment.url"></iframe>
+                    <pre v-else-if="message.attachment.type.startsWith('text/')" class="text-preview">{{ message.attachment.content }}</pre>
+                    <div v-else class="unsupported-preview">
+                      <p>Unsupported file type: {{ message.attachment.type }}</p>
+                    </div>
+                  </div>
+                </a>
               </div>
-            </a>
+              -->
+              <span class="timestamp">{{ comment.created_at }}</span>
+            </div>
           </div>
-          <span class="timestamp">{{ message.timestamp }}</span>
         </div>
-      </div>
-      </div>
-      <div v-if="!isArchive && ticket.status !== 'Closed'" class="ticket-response">
-        <span v-if="fileUploaded" class="file-uploaded-indicator">File uploaded</span>
-        <textarea v-model="responseMessage" placeholder="Write your response for the issue"></textarea>
-        <div class="button_extended_container">
-          <label class="add_attachment">
-            <input type="file" @change="handleFileUpload" accept=".jpg,.jpeg,.png,.pdf" style="display: none;">
-            Attachment <img class="paperclip" src="../assets/Paperclip.png" alt="add attachments">
-          </label>
+        <div v-if="!isArchive && ticket.status !== 'Closed'" class="ticket-response">
+          <span v-if="fileUploaded" class="file-uploaded-indicator">File uploaded</span>
+          <textarea v-model="responseMessage" placeholder="Write your response for the issue"></textarea>
+          <div class="button_extended_container">
+            <label class="add_attachment">
+              <input type="file" @change="handleFileUpload" accept=".jpg,.jpeg,.png,.pdf" style="display: none;">
+              Attachment <img class="paperclip" src="../assets/Paperclip.png" alt="add attachments">
+            </label>
 
-          <button class="add_comment" @click="submitResponse">Comment</button>
+            <button class="add_comment" @click="submitResponse">Comment</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
   </div>
 </template>
 

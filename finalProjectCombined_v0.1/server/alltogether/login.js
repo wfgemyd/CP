@@ -6,13 +6,7 @@ const db = require('./postgres');
 
 
 router.post('/', async (req, res) => {
-    console.log('Received login request with body:', req.body);
-
     const { username, password } = req.body;
-    console.log('Received username:', username);
-    console.log('Received password:', password);
-    console.log("User attempting to log in");
-
     try {
         const sql = `
             SELECT u.*, r.role_name, u.f_name, u.l_name, u.id

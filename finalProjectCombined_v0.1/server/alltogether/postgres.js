@@ -1,13 +1,7 @@
 require('dotenv').config({ path: './alltogether/.env' });
 const { Pool } = require('pg');
-
 const temp = JSON.parse(process.env.POSTGRES);
-console.log('temp');
-console.log(temp);
-
 const pool = new Pool(temp);
-
-
 module.exports = {
     query: (sql, params) => pool.query(sql, params)
 };

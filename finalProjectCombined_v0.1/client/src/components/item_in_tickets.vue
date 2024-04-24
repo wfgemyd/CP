@@ -1,17 +1,18 @@
 <script setup>
-import { ref } from 'vue';
+const props = defineProps({
+  ticket: Object,
+  expanded: Boolean
+});
 
-</script>
-<script>
-export default {
-  props: {
-    ticket: Object
-  }
-}
+const emit = defineEmits(['toggleExpandedView']);
+
+const toggleView = () => {
+  emit('toggleExpandedView', props.ticket.id);
+};
 </script>
 
 <template>
-  <div class="alltickets_item">
+  <div class="alltickets_item" @click="toggleView">
     <div class="alltickets_item_upperrow">
       <div class="alltickets_item_header">
         <h3>{{ ticket.title }}</h3>
@@ -25,7 +26,7 @@ export default {
         <ul>
           <li id="created_on"><span class="label">Created on:</span> {{ ticket.createdOn }}</li>
           <li id="updated_on"><span class="label">Updated on:</span> {{ ticket.updatedOn }}</li>
-          <li id="closed_on"><span class="label">Closed on:</span> {{ ticket.closedOn }}</li>
+          <li id="closed_on" v-if="ticket.closedOn"><span class="label">Closed on:</span> {{ ticket.closedOn }}</li>
         </ul>
       </div>
       <div class="alltickets_item_status_priority">
