@@ -2,18 +2,16 @@ require('dotenv').config();
 const router = require('express').Router();
 const db = require('./postgres');
 const jwt = require('jsonwebtoken');
-//get the tickets that are relevant to the user that he created, if it is an administrator then all tickets are visiable,
-// if manager only tickets that are related to the category(project) that the manager is managing.
-//console.log('++++++++++++++++++++++++++++++++++++++++++');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
+const base64ToPDF = require('base64topdf');
+const path = require('path');
 
 
 router.get('/', async (req, res) => {
     try {
-        // Extract the user ID from the JWT token payload
-        const userId = req.user.uId; // This should match the payload property name you set in login.js
-        // Call the stored function using SELECT statement
+        const userId = req.user.uId;
         const result = await db.query('SELECT * FROM Fproject.get_user_tickets($1)', [userId]);
-        // Send the result rows back as JSON
         res.json(result.rows);
     } catch (error) {
         console.error('Failed to fetch tickets:', error);
@@ -28,9 +26,23 @@ router.get('/:ticketId/details', async (req, res) => {
         const ticketComments = await db.query('SELECT * FROM Fproject.ticket_comment WHERE ticket_id = $1', [ticketId]);
         const ticketEvents = await db.query('SELECT * FROM Fproject.event_store WHERE aggregate_id = $1', [ticketId]);
 
+        // Convert attachment data to base64
+        const commentsWithAttachments = ticketComments.rows.map(comment => {
+            if (comment.attachment) {
+                const attachmentType = comment.attachment_type || path.extname(comment.attachment_name).slice(1);
+
+                comment.attachment = {
+                    data: comment.attachment.toString('base64'),
+                    type: attachmentType === 'png' ? 'image/png' : attachmentType,
+                    name: comment.attachment_name,
+                };
+            }
+            return comment;
+        });
+
         res.json({
             ticket: ticketDetails.rows[0],
-            comments: ticketComments.rows,
+            comments: commentsWithAttachments,
             events: ticketEvents.rows
         });
     } catch (error) {
@@ -39,17 +51,28 @@ router.get('/:ticketId/details', async (req, res) => {
     }
 });
 
-router.post('/:ticketId/comment', async (req, res) => {
+
+
+
+router.post('/:ticketId/comment', upload.single('attachment'), async (req, res) => {
     try {
         const { ticketId } = req.params;
-        const { userId, comment } = req.body
-        const result = await db.query('SELECT Fproject.add_ticket_comment($1, $2, $3)', [ticketId, userId, comment]);
+        const { userId, comment } = req.body;
+        const attachment = req.file ? req.file.buffer : null;
+        console.log(req.file);
+        const attachmentName = req.file ? req.file.originalname : null; // Get the original file name
+        const attachmentType = req.file ? req.file.mimetype : null;
+
+        await db.query('SELECT Fproject.add_ticket_comment($1, $2, $3, $4, $5, $6)', [ticketId, userId, comment, attachment, attachmentName, attachmentType]);
         res.json({ message: 'Comment added successfully' });
     } catch (error) {
         console.error('Failed to add comment:', error);
         res.status(500).json({ message: 'Internal server error' });
-
     }
 });
-module.exports = router;
 
+
+
+
+
+module.exports = router;

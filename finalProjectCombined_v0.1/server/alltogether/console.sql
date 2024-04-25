@@ -107,8 +107,13 @@ CREATE TABLE Fproject.user_checklist_status (
 CREATE TABLE Fproject.ticket_status ( -- One to many relationship
                                         id SERIAL PRIMARY KEY,
                                         status_name VARCHAR,
-                                        color BIGINT
+                                        color BIGINT,
+                                        days_to_update INT DEFAULT NULL
 );
+
+--UPDATE Fproject.ticket_status
+--SET days_to_update = 14
+--WHERE status_name = 'Verifying';
 
 -- Creating 'ticket_priorities' table
 CREATE TABLE Fproject.ticket_priorities ( -- One to many relationship
@@ -137,7 +142,8 @@ CREATE TABLE Fproject.ticket (
                                  completed_at TIMESTAMP NULL,
                                  assigned_to INT REFERENCES Fproject."user"(id), --to whom the ticket is assigned
                                  fallback_approver INT REFERENCES Fproject."user"(id) NULL, -- If the assigned user is not available, the ticket can be assigned to a fallback approver
-                                 category_id INT REFERENCES Fproject.categories(category_id)
+                                 category_id INT REFERENCES Fproject.categories(category_id),
+                                 attachment BYTEA DEFAULT NULL -- Optional: to store file data in the database;
 );
 
 -- Creating a 'permissions' table
@@ -163,8 +169,12 @@ CREATE TABLE Fproject.ticket_comment (
                                          file_data BYTEA, -- adding files to the comment
                                          status_change INT REFERENCES Fproject.ticket_status(id), -- Optional reference to a new status
                                          priority_change INT REFERENCES Fproject.ticket_priorities(id), -- Optional reference to a new priority
-                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- The date and time when the comment was made
+                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- The date and time when the comment was made
+                                         attachment BYTEA DEFAULT NULL, -- Optional: to store file data in the database;
+                                         attachment_name VARCHAR NULL,
+                                         attachment_type VARCHAR NULL
 );
+
 
 -- Creating 'notifications' table
 CREATE TABLE Fproject.notifications (
@@ -205,6 +215,14 @@ CREATE TABLE Fproject.user_status_audit (
                                             change_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+
+ALTER TABLE Fproject.ticket
+    ADD CONSTRAINT ticket_attachment_size_limit
+        CHECK (octet_length(attachment) <= 5242880); -- 5 MB limit
+
+ALTER TABLE Fproject.ticket_comment
+    ADD CONSTRAINT comment_attachment_size_limit
+        CHECK (octet_length(attachment) <= 5242880);
 ---------------------------------------------------------------------------------
 -- Indexes
 
@@ -224,17 +242,25 @@ CREATE INDEX idx_ticket_comment ON Fproject.ticket_comment USING GIN (to_tsvecto
 -- Trigger for updating ticket status after 14 days of "verifying" status
 CREATE OR REPLACE FUNCTION update_ticket_status()
     RETURNS TRIGGER AS $$
+DECLARE
+    days_to_update INT;
 BEGIN
-    -- Check if the ticket status is 'Verifying' and if two weeks have passed
+    -- Get the number of days to update from the ticket_status table
+    SELECT ts.days_to_update INTO days_to_update
+    FROM Fproject.ticket_status ts
+    WHERE ts.id = OLD.status_id;
+
+    -- Check if the ticket status is 'Verifying' and if the configured number of days have passed
     IF OLD.status_id = (SELECT id FROM Fproject.ticket_status WHERE status_name = 'Verifying')
-        AND CURRENT_DATE - OLD.updated_at::date >= 14 THEN
+        AND CURRENT_DATE - OLD.updated_at::date >= days_to_update THEN
         -- Update the ticket status to 'Closed'
         UPDATE Fproject.ticket SET status_id = (SELECT id FROM Fproject.ticket_status WHERE status_name = 'Closed')
         WHERE id = OLD.id;
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$
+    LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_update_ticket_status
     AFTER UPDATE ON Fproject.ticket
@@ -484,8 +510,10 @@ BEGIN
 END;
 $$
     LANGUAGE plpgsql;
-
-
+-- Create a trigger that will call the trigger function when a new user is added
+CREATE TRIGGER trigger_populate_user_checklist_status
+    AFTER INSERT ON Fproject."user"
+    FOR EACH ROW EXECUTE FUNCTION Fproject.populate_user_checklist_status();
 
 -- Create a trigger function that will be called when a new checklist item is added
 CREATE OR REPLACE FUNCTION Fproject.update_checklist_template_item()
@@ -494,8 +522,16 @@ BEGIN
     -- Check if we are inserting a new checklist item
     IF TG_OP = 'INSERT' THEN
         -- Insert a new checklist_template_item for each existing checklist_template
+        -- only if the combination doesn't already exist
         INSERT INTO Fproject.checklist_template_item (checklist_template_id, checklist_item_id)
-        SELECT id, NEW.id FROM Fproject.checklist_template;
+        SELECT id, NEW.id
+        FROM Fproject.checklist_template
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM Fproject.checklist_template_item
+            WHERE checklist_template_id = Fproject.checklist_template.id
+              AND checklist_item_id = NEW.id
+        );
     ELSIF TG_OP = 'DELETE' THEN
         -- Remove all associations with the deleted checklist_item from checklist_template_item
         DELETE FROM Fproject.checklist_template_item WHERE checklist_item_id = OLD.id;
@@ -505,13 +541,9 @@ BEGIN
     RETURN NULL; -- Result is ignored since this is an AFTER trigger
 END;
 $$
+
     LANGUAGE plpgsql;
 
--- Create the trigger on the 'checklist_item' table for both INSERT and DELETE operations
-CREATE TRIGGER trigger_update_checklist_template_item
-    AFTER INSERT OR DELETE ON Fproject.checklist_item
-    FOR EACH ROW
-EXECUTE FUNCTION Fproject.update_checklist_template_item();
 
 
 -- Trigger function for handling insertions into checklist_item
@@ -552,6 +584,22 @@ CREATE TRIGGER trigger_checklist_item_delete
     FOR EACH ROW
 EXECUTE FUNCTION Fproject.on_checklist_item_delete();
 
+-- Trigger function adds a new comment in ticket
+CREATE OR REPLACE FUNCTION Fproject.add_ticket_comment(
+    p_ticket_id INT,
+    p_user_id INT,
+    p_comment TEXT,
+    p_attachment BYTEA,
+    p_attachment_name VARCHAR,
+    p_attachment_type VARCHAR
+)
+    RETURNS VOID AS $$
+BEGIN
+    INSERT INTO Fproject.ticket_comment (ticket_id, user_id, comment, attachment, attachment_name, attachment_type )
+    VALUES (p_ticket_id, p_user_id, p_comment, p_attachment, p_attachment_name, p_attachment_type);
+END;
+$$
+    LANGUAGE plpgsql;
 
 
 ---------------------------------------------------------------------------------
@@ -665,11 +713,6 @@ INSERT INTO Fproject.checklist_item (item_description) VALUES
                                                            ('Review and acknowledge the employee handbook, which outlines the companys rules, regulations, and expectations'),
                                                            ('Complete any required training modules, such as diversity and inclusion, sexual harassment prevention, or data privacy and security');
 
-
-INSERT INTO Fproject.checklist_template_item (checklist_template_id, checklist_item_id) VALUES
-                                                                                            (1, 1),
-                                                                                            (1, 2),
-                                                                                            (1, 3);
 
 INSERT INTO Fproject.user_checklist_status (user_id, checklist_item_id, is_completed, completed_at) VALUES
                                                                                                         (5, 1, TRUE, CURRENT_TIMESTAMP),
@@ -1042,6 +1085,25 @@ BEGIN
         RAISE EXCEPTION 'Priority % not found.', p_priority_name;
     END IF;
 
+-- Check if the user exists
+    IF NOT EXISTS (SELECT 1 FROM Fproject."user" WHERE id = p_user_id) THEN
+        RAISE EXCEPTION 'User with ID % does not exist.', p_user_id;
+    END IF;
+
+-- Check if the category exists
+    IF NOT EXISTS (SELECT 1 FROM Fproject.categories WHERE category_id = p_category_id) THEN
+        RAISE EXCEPTION 'Category with ID % does not exist.', p_category_id;
+    END IF;
+
+    -- Check if the subject and content are not empty
+    IF p_subject IS NULL OR p_subject = '' THEN
+        RAISE EXCEPTION 'Ticket subject cannot be empty.';
+    END IF;
+
+    IF p_content IS NULL OR p_content = '' THEN
+        RAISE EXCEPTION 'Ticket content cannot be empty.';
+    END IF;
+
     -- Insert the ticket
     INSERT INTO Fproject.ticket(subject, content, status_id, priority_id, user_id, created_at, updated_at, assigned_to, category_id)
     VALUES (p_subject, p_content, v_status_id, v_priority_id, p_user_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, v_assigned_to, p_category_id);
@@ -1126,13 +1188,40 @@ BEGIN
         VALUES ('comment_file_added', 'ticket', p_ticket_id, v_event_payload, p_user_id);
     END IF;
 
+    -- Check if the user exists
+    IF p_user_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Fproject."user" WHERE id = p_user_id) THEN
+        RAISE EXCEPTION 'User with ID % does not exist.', p_user_id;
+    END IF;
+
+-- Check if the category exists
+    IF p_new_category_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Fproject.categories WHERE category_id = p_new_category_id) THEN
+        RAISE EXCEPTION 'Category with ID % does not exist.', p_new_category_id;
+    END IF;
+
+-- Check if the assigned user exists
+    IF p_new_assigned_to IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Fproject."user" WHERE id = p_new_assigned_to) THEN
+        RAISE EXCEPTION 'User with ID % does not exist.', p_new_assigned_to;
+    END IF;
+
+-- Check if the fallback approver exists
+    IF p_new_fallback_approver IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Fproject."user" WHERE id = p_new_fallback_approver) THEN
+        RAISE EXCEPTION 'User with ID % does not exist.', p_new_fallback_approver;
+    END IF;
+
+    -- Check if the user has permission to update the ticket
+    IF NOT p_is_manager_or_admin AND NOT EXISTS (
+        SELECT 1 FROM Fproject.ticket WHERE id = p_ticket_id AND user_id = p_user_id
+    ) THEN
+        RAISE EXCEPTION 'User with ID % does not have permission to update this ticket.', p_user_id;
+    END IF;
+
     -- Update the updated_at timestamp
     UPDATE Fproject.ticket SET updated_at = CURRENT_TIMESTAMP WHERE id = p_ticket_id;
 END;
 $$;
 
 -- Stored procedure to close a ticket or delete it if it's within 5 minutes of creation
-CREATE OR REPLACE PROCEDURE Fproject.CloseOrDeleteTicket(p_ticket_id INT)
+CREATE OR REPLACE PROCEDURE Fproject.CloseOrDeleteTicket(p_ticket_id INT, p_user_id INT)
     LANGUAGE plpgsql AS $$
 DECLARE
     v_closed_status_id INT;
@@ -1144,6 +1233,16 @@ BEGIN
 
     IF NOT v_ticket_exists THEN
         RAISE EXCEPTION 'Ticket with ID % does not exist.', p_ticket_id;
+    END IF;
+
+    -- Check if the user has permission to close or delete the ticket
+    IF NOT EXISTS (
+        SELECT 1 FROM Fproject.ticket t
+                          JOIN Fproject."user" u ON t.user_id = u.id
+                          JOIN Fproject.role r ON u.role_id = r.id
+        WHERE t.id = p_ticket_id AND (r.role_name = 'Administrator' OR r.role_name = 'Manager')
+    ) THEN
+        RAISE EXCEPTION 'User does not have permission to close or delete this ticket.';
     END IF;
 
     -- Retrieve the 'Closed' status_id
@@ -1161,7 +1260,7 @@ BEGIN
         DELETE FROM Fproject.ticket WHERE id = p_ticket_id;
         -- Optionally, log ticket deletion
         INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-        VALUES ('ticket_deleted', 'ticket', p_ticket_id, '{"action": "ticket_deleted"}', NULL);
+        VALUES ('ticket_deleted', 'ticket', p_ticket_id, '{"action": "ticket_deleted"}', p_user_id);
     ELSE
         -- Update the ticket status to 'Closed' if it's past 5 minutes
         UPDATE Fproject.ticket
@@ -1169,8 +1268,18 @@ BEGIN
         WHERE id = p_ticket_id;
         -- Log ticket closure event
         INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-        VALUES ('ticket_closed', 'ticket', p_ticket_id, '{"action": "ticket_closed"}', NULL);
+        VALUES ('ticket_closed', 'ticket', p_ticket_id, '{"action": "ticket_closed"}', p_user_id);
     END IF;
+
+    -- Log ticket closure or deletion event
+    INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
+    VALUES (
+               CASE WHEN (EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - v_created_at)) / 60) <= 5 THEN 'ticket_deleted' ELSE 'ticket_closed' END,
+               'ticket',
+               p_ticket_id,
+               CASE WHEN (EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - v_created_at)) / 60) <= 5 THEN '{"action": "ticket_deleted"}' ELSE '{"action": "ticket_closed"}' END,
+               (SELECT user_id FROM Fproject.ticket WHERE id = p_ticket_id) -- Log the user who created the ticket
+           );
 END;
 $$;
 

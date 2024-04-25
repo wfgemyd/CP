@@ -1,6 +1,5 @@
 <script setup>
-import {onMounted, ref} from 'vue';
-
+import { onMounted, ref } from 'vue';
 
 const props = defineProps({
   ticket: Object,
@@ -9,6 +8,7 @@ const props = defineProps({
     default: false
   }
 });
+
 const ticketDetails = ref({});
 const ticketComments = ref([]);
 const ticketEvents = ref([]);
@@ -28,18 +28,18 @@ onMounted(async () => {
     console.error('Failed to fetch ticket details:', error);
   }
 });
-const ticket_priority = { low: "low", medium: "medium", high: "high", urgent: "urgent"};
+
+const ticket_priority = { low: "low", medium: "medium", high: "high", urgent: "urgent" };
 const ticket_status = { open: "open", verifying: "verifying", rejected: "rejected", closed: "closed" };
 const required_category = { gendalf: "gendalf", banana: "banana", coolchip: "coolchip" };
 const ticket_manager = { manager1: "Manager", manager2: "manager2", manager3: "manager3" };
 const employment_status = { contractor: "contractor", fullTime: "full-time", partTime: "part-time", intern: "intern" };
-const permission_required = { read: "read", write: "write"};
+const permission_required = { read: "read", write: "write" };
 const user_role = { designer: "designer", developer: "developer", manager: "Manager", tester: "tester" };
 const attachment = { none: null };
-
 </script>
-<script>
 
+<script>
 export default {
   props: {
     ticket: Object
@@ -49,53 +49,121 @@ export default {
       isEditing: false,
       selectedFile: null,
       fileUploaded: false,
-      chatMessages: [
-        { id: 1, content: "We are checking if the slot is open", isSender: false, timestamp: "Today, 11:15 PM" },
-        { id: 2, content: "Okay, keep me updated", isSender: true, timestamp: "Today, 11:30 PM" },
-        { id: 3, content: "need access to gandalf", isSender: true, timestamp: "Today, 11:35 PM" }
-      ],
-      responseMessage: ''
+      responseMessage: '',
+      userId: localStorage.getItem('uId') || null,
+
     }
   },
   methods: {
     toggleEditing() {
       this.isEditing = !this.isEditing;
     },
+    getAttachmentUrl(attachment) {
+      if (!attachment || !attachment.data) {
+        console.error('Attachment data is missing or incomplete');
+        return '';
+      }
+
+      try {
+        const byteCharacters = atob(attachment.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const fileBlob = new Blob([byteArray], { type: attachment.type });
+
+        // Check if the file type is supported for rendering
+        const supportedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+        if (supportedTypes.includes(attachment.type)) {
+          // Render the file
+          return URL.createObjectURL(fileBlob);
+        } else {
+          // Provide a download URL for unsupported file types
+          return URL.createObjectURL(fileBlob);
+        }
+      } catch (error) {
+        console.error('Error processing attachment data:', error);
+        return '';
+      }
+    }
+
+    ,
+
     handleFileUpload(event) {
       const file = event.target.files[0];
-      const maxSize = 25 * 1024 * 1024; // 25MB in bytes
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
 
       if (file && file.size <= maxSize) {
         this.selectedFile = file;
-        this.fileUploaded = true; // Set fileUploaded to true when a file is selected
+        this.fileUploaded = true;
       } else {
-        alert('Please select a file with a size less than or equal to 25MB.');
-        this.selectedFile = null;
-        this.fileUploaded = false; // Set fileUploaded to false if no file is selected or size exceeds limit
-      }
-    },
-    async submitResponse() {
-      if (this.responseMessage.trim() !== '' || this.selectedFile) {
-        const newMessage = {
-          id: this.chatMessages.length + 1,
-          content: this.responseMessage,
-          isSender: true,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          attachment: this.selectedFile ? {
-            name: this.selectedFile.name,
-            type: this.selectedFile.type,
-            url: URL.createObjectURL(this.selectedFile)
-          } : null
-        };
-        this.chatMessages.push(newMessage);
-        this.responseMessage = '';
+        alert('Please select a file with a size less than or equal to 5MB.');
         this.selectedFile = null;
         this.fileUploaded = false;
+      }
+    },
+
+    async submitResponse() {
+      if (this.responseMessage.trim() !== '' || this.selectedFile) {
+        const formData = new FormData();
+        formData.append('userId', this.userId);
+        formData.append('comment', this.responseMessage);
+        if (this.selectedFile) {
+          formData.append('attachment', this.selectedFile);
+          formData.append('attachmentType', this.selectedFile.type);
+        }
+
+        try {
+          console.log('Adding comment:', formData);
+          const response = await fetch(`/api/tickets/${this.ticket.id}/comment`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `${localStorage.getItem('token')}`
+            },
+            body: formData
+          });
+          console.log('Retrieved userId:', this.userId);
+
+          if (response.ok) {
+            // Comment added successfully, refresh comments
+            this.fetchTicketDetails();
+            this.responseMessage = '';
+            this.selectedFile = null;
+            this.fileUploaded = false;
+          } else {
+            console.error('Failed to add comment');
+          }
+        } catch (error) {
+          console.error('Error adding comment:', error);
+        }
+      }
+    },
+
+    async fetchTicketDetails() {
+      try {
+        const response = await fetch(`/api/tickets/${this.ticket.id}/details`, {
+          headers: {
+            'Authorization': `${localStorage.getItem('token')}`
+          }
+        });
+        const data = await response.json();
+        this.ticketDetails = data.ticket;
+        this.ticketComments = data.comments;
+        this.ticketEvents = data.events;
+
+        console.log('Ticket details:', this.ticketDetails);
+        console.log('Ticket comments:', this.ticketComments);
+        console.log('Ticket events:', this.ticketEvents);
+
+      } catch (error) {
+        console.error('Failed to fetch ticket details:', error);
       }
     }
   }
 }
 </script>
+
 
 <template>
   <div class="extended_container">
@@ -190,23 +258,24 @@ export default {
           <div class="ticket-chat">
             <div v-for="comment in ticketComments" :key="comment.id" class="chat-message">
               <p>{{ comment.comment }}</p>
-<!--
-              <div v-if="message.attachment" class="attachment">
-                <a :href="message.attachment.url" target="_blank" class="attachment-link">
-                  <span class="attachment-name">{{ message.attachment.name }}</span>
+              <div v-if="comment.attachment" class="attachment">
+                <a :href="getAttachmentUrl(comment.attachment)"
+                   :download="comment.attachment.type.startsWith('image') || comment.attachment.type === 'application/pdf' ? '' : comment.attachment.name"
+                   target="_blank" class="attachment-link">
+                  <span class="attachment-name">{{ comment.attachment.name }}</span>
                   <div class="attachment-preview">
-                    <img v-if="message.attachment.type.startsWith('image')" :src="message.attachment.url" alt="Attachment Preview">
-                    <embed v-else-if="message.attachment.type === 'application/pdf'" :src="message.attachment.url" type="application/pdf">
-                    <video v-else-if="message.attachment.type.startsWith('video')" :src="message.attachment.url" controls></video>
-                    <iframe v-else-if="message.attachment.type === 'text/html'" :src="message.attachment.url"></iframe>
-                    <pre v-else-if="message.attachment.type.startsWith('text/')" class="text-preview">{{ message.attachment.content }}</pre>
+                    <img v-if="comment.attachment.type.startsWith('image/jpeg') || comment.attachment.type === 'image/png'" :src="getAttachmentUrl(comment.attachment)" alt="Attachment Preview" :width=300 :height=300>
+
+                    <embed v-else-if="comment.attachment.type === 'application/pdf'" :src="getAttachmentUrl(comment.attachment)" type="application/pdf">
+                    <!-- Add more conditions for other file types as needed -->
                     <div v-else class="unsupported-preview">
-                      <p>Unsupported file type: {{ message.attachment.type }}</p>
+                      <p>Unsupported file type: {{ comment.attachment.type }}</p>
                     </div>
                   </div>
                 </a>
               </div>
-              -->
+
+
               <span class="timestamp">{{ comment.created_at }}</span>
             </div>
           </div>
