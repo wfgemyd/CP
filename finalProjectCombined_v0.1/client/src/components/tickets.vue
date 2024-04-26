@@ -61,12 +61,21 @@ export default {
         this.tickets = jsonTickets.map(ticket => ({
           ...ticket,
           title: ticket.subject,
+          content: ticket.content,
           createdOn: ticket.created_at.split('T')[0],
           updatedOn: ticket.updated_at.split('T')[0],
           closedOn: ticket.completed_at ? ticket.completed_at.split('T')[0] : '',
           status: ticket.status_name,
           priority: ticket.priority_name,
-          id: ticket.ticket_id
+          id: ticket.ticket_id,
+          category: ticket.category_name,
+          assignedTo: ticket.assigned_to_name,
+          requester: ticket.requester_name,
+          permission_required: ticket.permission_required,
+          requester_role: ticket.requester_role,
+          employment_type: ticket.requester_employment_status,
+
+
         }));
         this.originalTickets = [...this.tickets];
       } catch (err) {

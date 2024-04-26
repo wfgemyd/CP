@@ -22,7 +22,28 @@ onMounted(async () => {
     });
     const data = await response.json();
     ticketDetails.value = data.ticket;
-    ticketComments.value = data.comments;
+    ticketDetails.value.created_at = new Date(data.ticket.created_at).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    }).replace(',', ' at');
+    // Format the created_at value for each comment
+    ticketComments.value = data.comments.map(comment => ({
+      ...comment,
+      created_at: new Date(comment.created_at).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+      }).replace(',', ' at')
+    }));
+
+    console.log('Ticket comments:', ticketComments.value);
     ticketEvents.value = data.events;
   } catch (error) {
     console.error('Failed to fetch ticket details:', error);
@@ -36,7 +57,6 @@ const ticket_manager = { manager1: "Manager", manager2: "manager2", manager3: "m
 const employment_status = { contractor: "contractor", fullTime: "full-time", partTime: "part-time", intern: "intern" };
 const permission_required = { read: "read", write: "write" };
 const user_role = { designer: "designer", developer: "developer", manager: "Manager", tester: "tester" };
-const attachment = { none: null };
 </script>
 
 <script>
@@ -149,12 +169,11 @@ export default {
         });
         const data = await response.json();
         this.ticketDetails = data.ticket;
+
         this.ticketComments = data.comments;
         this.ticketEvents = data.events;
 
-        console.log('Ticket details:', this.ticketDetails);
-        console.log('Ticket comments:', this.ticketComments);
-        console.log('Ticket events:', this.ticketEvents);
+
 
       } catch (error) {
         console.error('Failed to fetch ticket details:', error);
@@ -169,7 +188,7 @@ export default {
   <div class="extended_container">
     <div class="alltickets_item_upperrow">
       <div class = "header_edit_style">
-        <h3 id="extended_subject_item">{{ ticket.title || 'Placeholder Title' }}</h3>
+        <h3 id="extended_subject_item">{{ ticket.title}}</h3>
         <button v-if="!isArchive && ticket.status !== 'Closed'" class="edit-button" @click="toggleEditing">
           <img src='../assets/NotePencil.png' alt="Edit & save">
         </button>
@@ -214,22 +233,29 @@ export default {
           </div>
           <div class="ticket-row">
             <span class="label">Project:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.project }}</div>
-            <select v-else v-model="ticket.project">
+            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.category }}</div>
+            <select v-else v-model="ticket.category">
               <option v-for="(label, value) in required_category" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
+            <span class="label">Permission Requested:</span>
+            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.permission_required }}</div>
+            <select v-else v-model="ticket.permission_required">
+              <option v-for="(label, value) in permission_required" :key="value" :value="value">{{ label }}</option>
+            </select>
+          </div>
+          <div class="ticket-row">
             <span class="label">Role:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.role}}</div>
-            <select v-else v-model="ticket.role">
+            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.requester_role}}</div>
+            <select v-else v-model="ticket.requester_role">
               <option v-for="(label, value) in user_role" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Employment Status:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.employmentStatus}}</div>
-            <select v-else v-model="ticket.employmentStatus">
+            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.employment_type}}</div>
+            <select v-else v-model="ticket.employment_type">
               <option v-for="(label, value) in employment_status" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
@@ -256,7 +282,7 @@ export default {
         </div>
         <div class="table-container">
           <div class="ticket-chat">
-            <div v-for="comment in ticketComments" :key="comment.id" class="chat-message">
+            <div v-for="comment in ticketComments" :key="comment.id" class="ticket-description">
               <p>{{ comment.comment }}</p>
               <div v-if="comment.attachment" class="attachment">
                 <a :href="getAttachmentUrl(comment.attachment)"
