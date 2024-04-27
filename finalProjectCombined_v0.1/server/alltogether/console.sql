@@ -58,8 +58,8 @@ CREATE TABLE Fproject.department_user ( -- Many to many relationship
 
 -- Creating 'position_user' table
 CREATE TABLE Fproject.position_user ( -- Many to many relationship
-    position_id INT REFERENCES Fproject.position(id),
-    user_id INT REFERENCES Fproject."user"(id),
+   position_id INT REFERENCES Fproject.position(id),
+   user_id INT REFERENCES Fproject."user"(id),
     PRIMARY KEY (position_id, user_id)
 );
 
@@ -149,16 +149,24 @@ CREATE TABLE Fproject.ticket (
     fallback_approver INT REFERENCES Fproject."user"(id) NULL, -- If the assigned user is not available, the ticket can be assigned to a fallback approver
     category_id INT REFERENCES Fproject.categories(category_id),
     attachment BYTEA DEFAULT NULL, -- Optional: to store file data in the database;
-    permission_required INT REFERENCES Fproject.permissions(id) -- The permission required to access the category
+    permission_required INT REFERENCES Fproject.permissions(id), -- The permission required to access the category
+    requested_position INT REFERENCES Fproject.position(id) NULL -- The requested position for the ticket
 );
 
 -- Creating 'user_categories' table
 CREATE TABLE Fproject.user_categories (
     user_id INT REFERENCES Fproject."user"(id),
     category_id INT REFERENCES Fproject.categories(category_id),
-    permission_id INT REFERENCES Fproject.permissions(id), -- The level of access the user has for the category
-    PRIMARY KEY (user_id, category_id, permission_id)
+    permission_id INT REFERENCES Fproject.permissions(id),
+    position_id INT REFERENCES Fproject.position(id), -- Update the reference to the position table
+    PRIMARY KEY (user_id, category_id, permission_id, position_id)
 );
+ALTER TABLE Fproject.user_categories
+    DROP CONSTRAINT user_categories_position_id_fkey;
+
+ALTER TABLE Fproject.user_categories
+    ADD CONSTRAINT user_categories_position_id_fkey FOREIGN KEY (position_id)
+        REFERENCES Fproject.position (id);
 
 -- Creating 'ticket_comment' table
 CREATE TABLE Fproject.ticket_comment (
@@ -238,7 +246,6 @@ CREATE INDEX idx_ticket_comment ON Fproject.ticket_comment USING GIN (to_tsvecto
 
 ---------------------------------------------------------------------------------
     -- Triggers
-
 -- Trigger for updating ticket status after 14 days of "verifying" status
 CREATE OR REPLACE FUNCTION update_ticket_status()
     RETURNS TRIGGER AS $$
@@ -601,7 +608,37 @@ END;
 $$
     LANGUAGE plpgsql;
 
+-- Function to update user_categories and set completed_at after ticket closure
+CREATE OR REPLACE FUNCTION Fproject.update_user_categories_on_ticket_closure()
+    RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the ticket status is being changed to 'Closed'
+    IF NEW.status_id = (SELECT id FROM Fproject.ticket_status WHERE status_name = 'Closed') THEN
+        -- Update or insert the user_categories record
+        INSERT INTO Fproject.user_categories (user_id, category_id, permission_id, position_id)
+        VALUES (NEW.user_id, NEW.category_id, NEW.permission_required, NEW.requested_position)
+        ON CONFLICT (user_id, category_id, permission_id, position_id) DO UPDATE
+            SET permission_id = NEW.permission_required, position_id = NEW.requested_position;
 
+        -- Update the completed_at field to the current timestamp
+        UPDATE Fproject.ticket
+        SET completed_at = CURRENT_TIMESTAMP
+        WHERE id = NEW.id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$
+
+    LANGUAGE plpgsql;
+
+
+-- Trigger to call the function after updating a ticket
+CREATE TRIGGER trigger_update_user_categories_on_ticket_closure
+    AFTER UPDATE ON Fproject.ticket
+    FOR EACH ROW
+    WHEN (OLD.status_id IS DISTINCT FROM NEW.status_id)
+EXECUTE FUNCTION Fproject.update_user_categories_on_ticket_closure();
 ---------------------------------------------------------------------------------
     -- Inserting sample data
 
@@ -719,22 +756,19 @@ INSERT INTO Fproject.user_checklist_status (user_id, checklist_item_id, is_compl
 (5, 2, TRUE, CURRENT_TIMESTAMP),
 (5, 3, FALSE, NULL);
 
-INSERT INTO Fproject.user_categories (user_id, category_id, permission_id) VALUES
-(1, 1, 2), -- Full access
-(1, 2, 2), -- Full access
-(1, 3, 2), -- Full access
-(2, 1, 3), -- No access
-(2, 2, 3), -- No access
-(2, 3, 2), -- Full access
-(3, 1, 2), -- Full access
-(3, 2, 1), -- Read-only
-(3, 3, 1); -- Read-only
+INSERT INTO Fproject.user_categories (user_id, category_id, permission_id, position_id) VALUES
+(1, 1, 1, 1), -- John Doe has read permission for Gendalf
+(2, 1, 2, 2), -- Jane Doe has write permission for Gendalf
+(3, 1, 1, 3), -- Alice Smith has read permission for Gendalf
+(4, 2, 1, 3), -- Bob Johnson has read permission for CoolChip
+(5, 3, 2, 3); -- Bob Johnson has write permission for Banana
 
 
-INSERT INTO Fproject.ticket (subject, content, status_id, priority_id, user_id, created_at, updated_at, completed_at, assigned_to, fallback_approver, category_id, attachment, permission_required) VALUES
-('Issue with server', 'The server is down and needs immediate attention', 1, 4, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 2, NULL, 1, NULL, 2),
-('Need access to new software', 'I require access to the new software for testing purposes', 1, 2, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 2, 3, 2, NULL, 1),
-('Request for new laptop', 'My laptop is outdated and needs to be replaced', 1, 3, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 1, NULL, 3, NULL, 1);
+
+INSERT INTO Fproject.ticket (subject, content, status_id, priority_id, user_id, created_at, updated_at, completed_at, assigned_to, fallback_approver, category_id, attachment, permission_required, requested_position) VALUES
+('Issue with server', 'The server is down and needs immediate attention', 1, 4, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 2, NULL, 1, NULL, 2, 8),
+('Need access to new software', 'I require access to the new software for testing purposes', 1, 2, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 2, 3, 2, NULL, 1, 6),
+('Request for new laptop', 'My laptop is outdated and needs to be replaced', 1, 3, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 1, NULL, 3, NULL, 1, 5);
 
 
 
@@ -851,9 +885,24 @@ INSERT INTO Fproject.department_user (department_id, user_id) VALUES
 (3, 5);
 
 INSERT INTO Fproject.position_user (position_id, user_id) VALUES
-(1, 1),
+(1, 5),
 (2, 2),
-(3, 3);
+(3, 3),
+(4, 4),
+(5, 1),
+(6, 5),
+(7, 5),
+(8, 5),
+(9, 5),
+(10, 5),
+(11, 5),
+(12, 5),
+(13, 5),
+(14, 5),
+(15, 5),
+(16, 5),
+(17, 5),
+(18, 5);
 
 INSERT INTO Fproject.certificates_user (certificate_id, user_id) VALUES
 (1, 1),
@@ -1096,15 +1145,16 @@ END;
 $$;
 
 
--- Stored procedure to edit category access to a user
 CREATE OR REPLACE PROCEDURE Fproject.EditCategoryAccess(
     p_user_id INT,
     p_category_id INT,
-    p_permission_name VARCHAR
+    p_permission_name VARCHAR,
+    p_position_id INT DEFAULT NULL
 )
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_permission_id INT;
+    v_role_id INT;
 BEGIN
     -- Retrieve the permission ID for the given permission name
     SELECT id INTO v_permission_id FROM Fproject.permissions WHERE permission_name = p_permission_name;
@@ -1113,19 +1163,28 @@ BEGIN
         RAISE EXCEPTION 'Permission % not found.', p_permission_name;
     END IF;
 
+    -- Retrieve the role ID for the user
+    SELECT role_id INTO v_role_id FROM Fproject."user" WHERE id = p_user_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'User with ID % not found.', p_user_id;
+    END IF;
+
     -- Check if the user already has access to the category
     IF EXISTS(SELECT 1 FROM Fproject.user_categories WHERE user_id = p_user_id AND category_id = p_category_id) THEN
-        -- Update existing permission
+        -- Update existing permission and position
         UPDATE Fproject.user_categories
-        SET permission_id = v_permission_id
+        SET permission_id = v_permission_id,
+            position_id = COALESCE(p_position_id, position_id)
         WHERE user_id = p_user_id AND category_id = p_category_id;
     ELSE
         -- Grant new access
-        INSERT INTO Fproject.user_categories (user_id, category_id, permission_id)
-        VALUES (p_user_id, p_category_id, v_permission_id);
+        INSERT INTO Fproject.user_categories (user_id, category_id, permission_id, position_id)
+        VALUES (p_user_id, p_category_id, v_permission_id, p_position_id);
     END IF;
 END;
 $$;
+
 
 -- Stored procedure to create a new ticket
 CREATE OR REPLACE PROCEDURE Fproject.CreateTicket(
@@ -1365,7 +1424,7 @@ CREATE OR REPLACE FUNCTION Fproject.get_user_tickets(p_user_id INT)
                      updated_at TIMESTAMP,
                      completed_at TIMESTAMP,
                      requester_name VARCHAR,
-                     requester_role VARCHAR,
+                     requester_position VARCHAR,
                      assigned_to_name VARCHAR,
                      permission_required VARCHAR,
                      requester_employment_status VARCHAR
@@ -1391,10 +1450,11 @@ BEGIN
                    t.updated_at,
                    t.completed_at,
                    (SELECT (u2.f_name || ' ' || u2.l_name)::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_name,
-                   (SELECT r2.role_name FROM Fproject."user" u2 JOIN Fproject.role r2 ON u2.role_id = r2.id WHERE u2.id = t.user_id) AS requester_role,
+                   (SELECT pos.pos_name FROM Fproject.position pos WHERE pos.id = t.requested_position) AS requester_position,
                    (SELECT (u3.f_name || ' ' || u3.l_name)::VARCHAR FROM Fproject."user" u3 WHERE u3.id = t.assigned_to) AS assigned_to_name,
                    (SELECT p.permission_name FROM Fproject.permissions p WHERE p.id = t.permission_required) AS permission_required,
-                   (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status FROM Fproject.ticket t
+                   (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status
+            FROM Fproject.ticket t
                      JOIN Fproject.ticket_status ts ON t.status_id = ts.id
                      JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
                      JOIN Fproject.categories c ON t.category_id = c.category_id;
@@ -1411,10 +1471,10 @@ BEGIN
                    t.updated_at,
                    t.completed_at,
                    (SELECT (u2.f_name || ' ' || u2.l_name)::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_name,
-                   (SELECT r2.role_name FROM Fproject."user" u2 JOIN Fproject.role r2 ON u2.role_id = r2.id WHERE u2.id = t.user_id) AS requester_role,
+                   (SELECT pos.pos_name FROM Fproject.position pos WHERE pos.id = t.requested_position) AS requester_position,
                    (SELECT (u3.f_name || ' ' || u3.l_name)::VARCHAR FROM Fproject."user" u3 WHERE u3.id = t.assigned_to) AS assigned_to_name,
                    (SELECT p.permission_name FROM Fproject.permissions p WHERE p.id = t.permission_required) AS permission_required,
-                     (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status
+                   (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status
             FROM Fproject.ticket t
                      JOIN Fproject.ticket_status ts ON t.status_id = ts.id
                      JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
@@ -1437,10 +1497,10 @@ BEGIN
                    t.updated_at,
                    t.completed_at,
                    (SELECT (u2.f_name || ' ' || u2.l_name)::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_name,
-                   (SELECT r2.role_name FROM Fproject."user" u2 JOIN Fproject.role r2 ON u2.role_id = r2.id WHERE u2.id = t.user_id) AS requester_role,
+                   (SELECT pos.pos_name FROM Fproject.position pos WHERE pos.id = t.requested_position) AS requester_position,
                    (SELECT (u3.f_name || ' ' || u3.l_name)::VARCHAR FROM Fproject."user" u3 WHERE u3.id = t.assigned_to) AS assigned_to_name,
                    (SELECT p.permission_name FROM Fproject.permissions p WHERE p.id = t.permission_required) AS permission_required,
-                        (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status
+                   (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status
             FROM Fproject.ticket t
                      JOIN Fproject.ticket_status ts ON t.status_id = ts.id
                      JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
@@ -1451,284 +1511,45 @@ END;
 $$
 
     LANGUAGE plpgsql;
+
 --drop function Fproject.get_user_tickets;
 
---select * from Fproject.get_user_tickets(1);
----------------------------------------------------------------------------------
-    -- Test triggers and stored procedures and views
+select * from Fproject.get_user_tickets(1);
 
-BEGIN;
--- Test the 'CreateNewUser' stored procedure
-CALL Fproject.CreateNewUser(
-    'userWBI', 'Test', 'User', 'test.user@example.com', 'hashed_password', 'New Employee', 'Employee'
-);
-SELECT * FROM Fproject."user" WHERE email = 'test.user@example.com';
+CREATE OR REPLACE FUNCTION Fproject.get_ticket_options()
+    RETURNS TABLE (
+                      option_type VARCHAR,
+                      option_value VARCHAR,
+                      option_label VARCHAR
+                  ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT CAST('position' AS VARCHAR) AS option_type, pos_name AS option_value, pos_name AS option_label
+        FROM Fproject.position
+        UNION ALL
+        SELECT CAST('permission_required' AS VARCHAR), permission_name, permission_name
+        FROM Fproject.permissions
+        UNION ALL
+        SELECT CAST('employment_status' AS VARCHAR), employment_name, employment_name
+        FROM Fproject.employment_status
+        UNION ALL
+        SELECT CAST('ticket_manager' AS VARCHAR), CONCAT(u.f_name, ' ', u.l_name), CONCAT(u.f_name, ' ', u.l_name)
+        FROM Fproject."user" u
+                 JOIN Fproject.role r ON u.role_id = r.id
+        WHERE r.role_name = 'Manager'
+        UNION ALL
+        SELECT CAST('required_category' AS VARCHAR), category_name, category_name
+        FROM Fproject.categories
+        UNION ALL
+        SELECT CAST('ticket_status' AS VARCHAR), status_name, status_name
+        FROM Fproject.ticket_status
+        UNION ALL
+        SELECT CAST('ticket_priority' AS VARCHAR), priority_name, priority_name
+        FROM Fproject.ticket_priorities;
+END;
+$$
 
--- Test the 'UpdateUser' stored procedure
-CALL Fproject.UpdateUser(
-    12,'TestUpdated', 'UserUpdated', 'updated.user@example.com', NULL, NULL
-);
-SELECT * FROM Fproject."user" WHERE email = 'updated.user@example.com';
+    LANGUAGE plpgsql;
 
--- Test the 'DeleteUser' stored procedure
-CALL Fproject.DeleteUser(12);
-SELECT * FROM Fproject."user" WHERE email = 'updated.user@example.com';
+select * from Fproject.get_ticket_options();
 
-ROLLBACK;
-
--- Test the 'EditCategoryAccess' stored procedure
-BEGIN;
-CALL Fproject.EditCategoryAccess(5, 1, 'Read and Write');
-SELECT * FROM Fproject.user_categories WHERE user_id = 5 AND category_id = 1;
-ROLLBACK;
-
--- Test the 'CreateTicket' stored procedure and the 'UpdateTicket' stored procedure and the 'CloseTicket' stored procedure
-BEGIN;
-
--- Simulating the creation of a new ticket
-
-CALL Fproject.CreateTicket(
-    'Test Subject',
-    'Test Content',
-    1, -- Assuming user_id 1 exists
-    1, -- Assuming category_id 1 exists
-    'Open',
-    'Medium'
-);
-SELECT * FROM Fproject.ticket WHERE subject = 'Test Subject';
-
--- First update to the ticket (assuming ticket_id 1 exists)
-
-CALL Fproject.UpdateTicket(
-    4, -- ticket_id
-    1, -- user_id
-    'In Progress', -- new_status
-    NULL, -- new_priority (not updating)
-    NULL, -- new_assigned_to (not updating)
-    NULL, -- new_fallback_approver (not updating)
-    NULL, -- new_category_id (not updating)
-    'Initial Comment', -- comment
-    NULL, -- file_data (not updating)
-    TRUE -- is_manager_or_admin
-);
-
-SELECT status_id, priority_id FROM Fproject.ticket WHERE id = 4;
-
--- Simulating a second update (adding a file, assuming the capability exists)
-
-
-CALL Fproject.UpdateTicket(
-    4, -- ticket_id
-    1, -- user_id
-    NULL, -- new_status (not updating)
-    'High', -- new_priority
-    NULL, -- new_assigned_to (not updating)
-    NULL, -- new_fallback_approver (not updating)
-    NULL, -- new_category_id (not updating)
-    'Follow-up Comment', -- comment
-    '\\xdeadbeef', -- file_data (simulating binary data)
-    TRUE -- is_manager_or_admin
-);
-
-
--- Retrieving the latest status and priority of the ticket for verification
-SELECT status_id, priority_id FROM Fproject.ticket WHERE id =4;
-
--- Retrieving the latest events from the event_store for verification
-SELECT * FROM Fproject.event_store ORDER BY event_id DESC LIMIT 2;
-
--- Closing the ticket (assuming ticket_id 1 exists)
-
-
---CALL Fproject.CloseTicket(4);
-
-
-ROLLBACK;
-
--- Test the 'manager_category_assignments' view
-SELECT * FROM Fproject.manager_category_assignments;
-
--- Test the 'available_fallback_approvers' view
-SELECT * FROM Fproject.available_fallback_approvers;
-
-BEGIN;
--- Test the 'CreateNewUser' stored procedure with invalid role
-CALL Fproject.CreateNewUser(
-    p_WBI => 'uniqueWBI',
-    p_f_name => 'Test',
-    p_l_name => 'User',
-    p_email => 'test.user@fproject.com',
-    p_password_hash => 'hashed_password',
-    p_role_name => 'NonExistentRole', -- This role does not exist
-    p_employment_name => 'Employee'
-);
-
-
-
--- Test the 'CreateNewUser' stored procedure with invalid employment status
-CALL Fproject.CreateNewUser(
-    p_WBI => 'uniqueWBI2',
-    p_f_name => 'Test',
-    p_l_name => 'User',
-    p_email => 'test2.user@fproject.com',
-    p_password_hash => 'hashed_password',
-    p_role_name => 'Employee', -- Assuming this role exists
-    p_employment_name => 'NonExistentStatus' -- This employment status does not exist
-);
-
--- Test the 'UpdateUser' stored procedure with invalid role
-CALL Fproject.UpdateUser(
-    p_user_id => 1, -- Use an actual user_id from your users table
-    p_f_name => NULL,
-    p_l_name => NULL,
-    p_email => NULL,
-    p_role_name => 'NonExistentRole', -- This role does not exist
-    p_employment_name => NULL
-);
-
--- Test the 'UpdateUser' stored procedure with invalid employment status
-CALL Fproject.UpdateUser(
-    p_user_id => 1,
-    p_f_name => NULL,
-    p_l_name => NULL,
-    p_email => NULL,
-    p_role_name => NULL,
-    p_employment_name => 'NonExistentStatus' -- This employment status does not exist
-);
-
--- Test the 'EditCategoryAccess' stored procedure with invalid user_id
-CALL Fproject.EditCategoryAccess(
-    p_user_id => 284,
-    p_category_id => 1,
-    p_permission_name => 'Read'
-);
-
--- Test the 'EditCategoryAccess' stored procedure with invalid category_id
-CALL Fproject.EditCategoryAccess(
-    p_user_id => 1,
-    p_category_id => 999999,
-    p_permission_name => 'Read'
-);
-
--- Test the 'EditCategoryAccess' stored procedure with invalid permission_name
-CALL Fproject.EditCategoryAccess(
-    p_user_id => 1,
-    p_category_id => 1,
-    p_permission_name => 'NonExistentPermission'
-);
-
--- Test the 'CreateTicket' stored procedure with invalid status_name
-CALL Fproject.CreateTicket(
-    p_subject => 'Test Ticket with Invalid Status',
-    p_content => 'This is a test ticket with an invalid status_name.',
-    p_user_id => 1,
-    p_category_id => 1,
-    p_status_name => 'NonExistentStatus',
-    p_priority_name => 'Medium'
-);
-
--- Test the 'CreateTicket' stored procedure with invalid priority_name
-CALL Fproject.CreateTicket(
-    p_subject => 'Test Ticket with Invalid Priority',
-    p_content => 'This is a test ticket with an invalid priority_name.',
-    p_user_id => 1,
-    p_category_id => 1,
-    p_status_name => 'Open',
-    p_priority_name => 'NonExistentPriority'
-);
-
--- Test the 'CreateTicket' stored procedure with invalid user_id
-CALL Fproject.CreateTicket(
-    p_subject => 'Test Ticket with Invalid User',
-    p_content => 'This is a test ticket with an invalid user_id.',
-    p_user_id => 999999,
-    p_category_id => 1,
-    p_status_name => 'Open',
-    p_priority_name => 'Medium'
-);
-
--- Test the 'CreateTicket' stored procedure with invalid category_id
-CALL Fproject.CreateTicket(
-    p_subject => 'Test Ticket with Invalid Category',
-    p_content => 'This is a test ticket with an invalid category_id.',
-    p_user_id => 1,
-    p_category_id => 999999,
-    p_status_name => 'Open',
-    p_priority_name => 'Medium'
-);
-
--- Test the 'UpdateTicket' stored procedure with invalid status_name
-CALL Fproject.UpdateTicket(
-    p_ticket_id => 1,
-    p_user_id => 1,
-    p_new_status => 'NonExistentStatus',
-    p_new_priority => NULL,
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_new_category_id => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
-
--- Test the 'UpdateTicket' stored procedure with invalid priority_name
-CALL Fproject.UpdateTicket(
-    p_ticket_id => 1,
-    p_user_id => 1,
-    p_new_status => NULL,
-    p_new_priority => 'NonExistentPriority',
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_new_category_id => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
-
--- Test the 'UpdateTicket' stored procedure with invalid user_id
-CALL Fproject.UpdateTicket(
-    p_ticket_id => 1, -- Use a valid ticket_id
-    p_user_id => 999999, -- This user_id does not exist
-    p_new_status => NULL,
-    p_new_priority => NULL,
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_new_category_id => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
-
--- Test the 'UpdateTicket' stored procedure with invalid ticket_id
-CALL Fproject.UpdateTicket(
-    p_ticket_id => 999999, -- This ticket_id does not exist
-    p_user_id => 1, -- Use a valid user_id
-    p_new_status => NULL,
-    p_new_priority => NULL,
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_new_category_id => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
-
--- Test the 'UpdateTicket' stored procedure with invalid category_id
-CALL Fproject.UpdateTicket(
-    p_ticket_id => 1, -- Use a valid ticket_id
-    p_user_id => 1, -- Use a valid user_id
-    p_new_category_id => 999999, -- This category_id does not exist
-    p_new_status => NULL,
-    p_new_priority => NULL,
-    p_new_assigned_to => NULL,
-    p_new_fallback_approver => NULL,
-    p_comment => NULL,
-    p_file_data => NULL,
-    p_is_manager_or_admin => TRUE
-);
-
--- Test the 'CloseTicket' stored procedure with invalid ticket_id
-CALL Fproject.CloseorDeleteTicket(999999); -- This ticket_id does not exist
-
-
-ROLLBACK;
