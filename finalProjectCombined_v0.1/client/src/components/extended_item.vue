@@ -1,6 +1,10 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import {computed, onMounted, ref} from 'vue';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
+const isArchiveRoute = computed(() => route.path.includes('/archive'));
+console.log('isArchiveRoute:', isArchiveRoute.value);
 const props = defineProps({
   ticket: Object,
   isArchive: {
@@ -12,6 +16,13 @@ const props = defineProps({
 const ticketDetails = ref({});
 const ticketComments = ref([]);
 const ticketEvents = ref([]);
+const ticket_priority = ref({});
+const ticket_status = ref({});
+const required_category = ref({});
+const ticket_manager = ref({});
+const employment_status = ref({});
+const permission_required = ref({});
+const position = ref({});
 
 onMounted(async () => {
   try {
@@ -43,20 +54,26 @@ onMounted(async () => {
       }).replace(',', ' at')
     }));
 
-    console.log('Ticket comments:', ticketComments.value);
     ticketEvents.value = data.events;
+    const optionsResponse = await fetch('/api/tickets/options', {
+      headers: {
+        'Authorization': `${localStorage.getItem('token')}`
+      }
+    });
+    const options = await optionsResponse.json();
+    ticket_priority.value = options.ticket_priority;
+    ticket_status.value = options.ticket_status;
+    required_category.value = options.required_category;
+    ticket_manager.value = options.ticket_manager;
+    employment_status.value = options.employment_status;
+    permission_required.value = options.permission_required;
+    position.value = options.position;
+
   } catch (error) {
-    console.error('Failed to fetch ticket details:', error);
+    console.error('Failed to fetch ticket options:', error);
   }
 });
 
-const ticket_priority = { low: "low", medium: "medium", high: "high", urgent: "urgent" };
-const ticket_status = { open: "open", verifying: "verifying", rejected: "rejected", closed: "closed" };
-const required_category = { gendalf: "gendalf", banana: "banana", coolchip: "coolchip" };
-const ticket_manager = { manager1: "Manager", manager2: "manager2", manager3: "manager3" };
-const employment_status = { contractor: "contractor", fullTime: "full-time", partTime: "part-time", intern: "intern" };
-const permission_required = { read: "read", write: "write" };
-const user_role = { designer: "designer", developer: "developer", manager: "Manager", tester: "tester" };
 </script>
 
 <script>
@@ -75,9 +92,42 @@ export default {
     }
   },
   methods: {
-    toggleEditing() {
+    async toggleEditing() {
+      if (this.isEditing) {
+        try {
+          // Send the updated ticket data to the backend API
+          const response = await fetch(`/api/tickets/${this.ticket.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              status_name: this.ticket.status,
+              priority_name: this.ticket.priority,
+              assigned_to_name: this.ticket.assignedTo,
+              category_name: this.ticket.category,
+              permission_required: this.ticket.permission_required,
+              requester_position: this.ticket.requester_position,
+              employment_type: this.ticket.employment_type
+
+            })
+          });
+
+          if (response.ok) {
+            // Update successful, refresh the ticket data
+            this.fetchTicketDetails();
+          } else {
+            // Handle error case
+            console.error('Failed to update ticket:', response.statusText);
+          }
+        } catch (error) {
+          console.error('Error updating ticket:', error);
+        }
+      }
       this.isEditing = !this.isEditing;
     },
+
     getAttachmentUrl(attachment) {
       if (!attachment || !attachment.data) {
         console.error('Attachment data is missing or incomplete');
@@ -106,10 +156,7 @@ export default {
         console.error('Error processing attachment data:', error);
         return '';
       }
-    }
-
-    ,
-
+    },
     handleFileUpload(event) {
       const file = event.target.files[0];
       const maxSize = 5 * 1024 * 1024; // 5MB in bytes
@@ -189,7 +236,7 @@ export default {
     <div class="alltickets_item_upperrow">
       <div class = "header_edit_style">
         <h3 id="extended_subject_item">{{ ticket.title}}</h3>
-        <button v-if="!isArchive && ticket.status !== 'Closed'" class="edit-button" @click="toggleEditing">
+        <button v-if="!isArchive && !isArchiveRoute" class="edit-button" @click="toggleEditing">
           <img src='../assets/NotePencil.png' alt="Edit & save">
         </button>
       </div>
@@ -219,42 +266,42 @@ export default {
           </div>
           <div class="ticket-row">
             <span class="label">Priority:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.priority }}</div>
+            <div v-if="isArchive  || !isEditing" class="content">{{ ticket.priority }}</div>
             <select v-else v-model="ticket.priority">
               <option v-for="(label, value) in ticket_priority" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Status:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.status }}</div>
+            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.status }}</div>
             <select v-else v-model="ticket.status">
               <option v-for="(label, value) in ticket_status" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Project:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.category }}</div>
+            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.category }}</div>
             <select v-else v-model="ticket.category">
               <option v-for="(label, value) in required_category" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Permission Requested:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.permission_required }}</div>
+            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.permission_required }}</div>
             <select v-else v-model="ticket.permission_required">
               <option v-for="(label, value) in permission_required" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Role:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.requester_role}}</div>
-            <select v-else v-model="ticket.requester_role">
-              <option v-for="(label, value) in user_role" :key="value" :value="value">{{ label }}</option>
+            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.requester_position}}</div>
+            <select v-else v-model="ticket.requester_position">
+              <option v-for="(label, value) in position" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Employment Status:</span>
-            <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.employment_type}}</div>
+            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.employment_type}}</div>
             <select v-else v-model="ticket.employment_type">
               <option v-for="(label, value) in employment_status" :key="value" :value="value">{{ label }}</option>
             </select>
@@ -262,7 +309,7 @@ export default {
         </div>
         <div class="assignedto-detail">
           <span class="label">Assigned to:</span>
-          <div v-if="isArchive || ticket.status === 'Closed' || !isEditing" class="content">{{ ticket.assignedTo}}</div>
+          <div v-if="isArchive || !isEditing" class="content">{{ ticket.assignedTo}}</div>
           <select v-else v-model="ticket.assignedTo">
             <option v-for="(label, value) in ticket_manager" :key="value" :value="value">{{ label }}</option>
           </select>

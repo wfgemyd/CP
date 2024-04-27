@@ -72,7 +72,7 @@ export default {
           assignedTo: ticket.assigned_to_name,
           requester: ticket.requester_name,
           permission_required: ticket.permission_required,
-          requester_role: ticket.requester_role,
+          requester_position: ticket.requester_position,
           employment_type: ticket.requester_employment_status,
 
 
@@ -177,13 +177,13 @@ export default {
           // Assuming you want to check if the ticket was closed today
           let today = new Date().toISOString().slice(0, 10); //for future use
           console.log(today);
-          return ticket.status === 'Closed' && ticket.closedOn === today;
+          return status === 'Closed' && ticket.closedOn === today;
         }
         if (status === 'Open') {
-          return ticket.status === 'Open';
+          return status === 'Open';
         }
         if (status === 'Verifying') {
-          return ticket.status === 'Verifying';
+          return status === 'Verifying';
         }
       });
     },
