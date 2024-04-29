@@ -25,7 +25,7 @@ const toggleView = () => {
       <div class="alltickets_item_dates">
         <ul>
           <li id="created_on"><span class="label">Created on:</span> {{ ticket.createdOn }}</li>
-          <li id="updated_on"><span class="label">Updated on:</span> {{ ticket.updatedOn }}</li>
+          <li id="updated_on" v-if="!ticket.closedOn && ticket.updatedOn"><span class="label">Updated on:</span> {{ ticket.updatedOn }}</li>
           <li id="closed_on" v-if="ticket.closedOn"><span class="label">Closed on:</span> {{ ticket.closedOn }}</li>
         </ul>
       </div>

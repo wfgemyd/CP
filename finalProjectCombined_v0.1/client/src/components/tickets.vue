@@ -78,6 +78,7 @@ export default {
 
         }));
         this.originalTickets = [...this.tickets];
+        this.filterTickets(this.selectedStatus);
       } catch (err) {
         console.error('Error fetching tickets:', err);
       }
@@ -177,13 +178,13 @@ export default {
           // Assuming you want to check if the ticket was closed today
           let today = new Date().toISOString().slice(0, 10); //for future use
           console.log(today);
-          return status === 'Closed' && ticket.closedOn === today;
+          return ticket.status === 'Closed'  //&& ticket.closedOn === today
         }
         if (status === 'Open') {
-          return status === 'Open';
+          return ticket.status === 'Open';
         }
         if (status === 'Verifying') {
-          return status === 'Verifying';
+          return ticket.status === 'Verifying';
         }
       });
     },

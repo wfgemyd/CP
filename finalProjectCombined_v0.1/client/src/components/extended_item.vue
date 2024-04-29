@@ -42,18 +42,24 @@ onMounted(async () => {
       hour12: true
     }).replace(',', ' at');
     // Format the created_at value for each comment
-    ticketComments.value = data.comments.map(comment => ({
-      ...comment,
-      created_at: new Date(comment.created_at).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-      }).replace(',', ' at')
+// Fetch user details for each comment
+    ticketComments.value = await Promise.all(data.comments.map(async (comment) => {
+      const fullName = `${data.f_name} ${data.l_name}`;
+      return {
+        ...comment,
+        fullName,
+        isSender: comment.user_id === parseInt(localStorage.getItem('uId')),
+        created_at: new Date(comment.created_at).toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: true
+        }).replace(',', ' at')
+      };
     }));
-
+    console.log('ticketComments:', ticketComments.value);
     ticketEvents.value = data.events;
     const optionsResponse = await fetch('/api/tickets/options', {
       headers: {
@@ -71,6 +77,9 @@ onMounted(async () => {
 
   } catch (error) {
     console.error('Failed to fetch ticket options:', error);
+    // Log the error message and stack trace
+    console.error('Error message:', error.message);
+    console.error('Stack trace:', error.stack);
   }
 });
 
@@ -110,6 +119,7 @@ export default {
               permission_required: this.ticket.permission_required,
               requester_position: this.ticket.requester_position,
               employment_type: this.ticket.employment_type
+
 
             })
           });
@@ -225,6 +235,58 @@ export default {
       } catch (error) {
         console.error('Failed to fetch ticket details:', error);
       }
+    },
+    getCommentEvents(commentId) {
+      if (!this.ticketEvents) {
+        // ticketEvents is not defined yet, return an empty array or handle the case appropriately
+        return [];
+      }
+      return this.ticketEvents.filter(event => event.payload.comment_id === commentId);
+    },
+    getEventLabel(eventType) {
+      switch (eventType) {
+        case 'status_change':
+          return 'Status Changed';
+        case 'priority_change':
+          return 'Priority Changed';
+        case 'project_change':
+          return 'Project Changed';
+        case 'permission_change':
+          return 'Permission Requested';
+        case 'position_change':
+          return 'Role Changed';
+        case 'assign_change':
+          return 'Assigned To';
+        case 'category_change':
+          return 'Category Changed';
+        case 'comment_file_added':
+          return 'Attachment Added';
+        default:
+          return eventType;
+      }
+    },
+    getEventDetails(event) {
+      switch (event.event_type) {
+        case 'status_change':
+          return `From "${event.payload.old_status}" to "${event.payload.new_status}"`;
+        case 'priority_change':
+          return `From "${event.payload.old_priority}" to "${event.payload.new_priority}"`;
+        case 'project_change':
+          return `From "${event.payload.old_project}" to "${event.payload.new_project}"`;
+        case 'permission_change':
+          return `From "${event.payload.old_permission}" to "${event.payload.new_permission}"`;
+        case 'position_change':
+          return `From "${event.payload.old_position}" to "${event.payload.new_position}"`;
+        case 'assign_change':
+          return `From "${event.payload.old_assign}" to "${event.payload.new_assign}"`;
+        case 'category_change':
+          return `From "${event.payload.old_category}" to "${event.payload.new_category}"`;
+        case 'comment_file_added':
+          return `File: ${event.payload.attachment_name}`;
+
+        default:
+          return JSON.stringify(event.payload);
+      }
     }
   }
 }
@@ -236,7 +298,7 @@ export default {
     <div class="alltickets_item_upperrow">
       <div class = "header_edit_style">
         <h3 id="extended_subject_item">{{ ticket.title}}</h3>
-        <button v-if="!isArchive && !isArchiveRoute" class="edit-button" @click="toggleEditing">
+        <button v-if="!isArchive && ticket.closedOn === ''" class="edit-button" @click="toggleEditing">
           <img src='../assets/NotePencil.png' alt="Edit & save">
         </button>
       </div>
@@ -266,7 +328,7 @@ export default {
           </div>
           <div class="ticket-row">
             <span class="label">Priority:</span>
-            <div v-if="isArchive  || !isEditing" class="content">{{ ticket.priority }}</div>
+            <div v-if="isArchive || !isEditing" class="content">{{ ticket.priority }}</div>
             <select v-else v-model="ticket.priority">
               <option v-for="(label, value) in ticket_priority" :key="value" :value="value">{{ label }}</option>
             </select>
@@ -280,28 +342,28 @@ export default {
           </div>
           <div class="ticket-row">
             <span class="label">Project:</span>
-            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.category }}</div>
+            <div v-if="isArchive || !isEditing" class="content">{{ ticket.category }}</div>
             <select v-else v-model="ticket.category">
               <option v-for="(label, value) in required_category" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Permission Requested:</span>
-            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.permission_required }}</div>
+            <div v-if="isArchive || !isEditing" class="content">{{ ticket.permission_required }}</div>
             <select v-else v-model="ticket.permission_required">
               <option v-for="(label, value) in permission_required" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Role:</span>
-            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.requester_position}}</div>
+            <div v-if="isArchive || !isEditing" class="content">{{ ticket.requester_position}}</div>
             <select v-else v-model="ticket.requester_position">
               <option v-for="(label, value) in position" :key="value" :value="value">{{ label }}</option>
             </select>
           </div>
           <div class="ticket-row">
             <span class="label">Employment Status:</span>
-            <div v-if="isArchive ||  !isEditing" class="content">{{ ticket.employment_type}}</div>
+            <div v-if="isArchive || !isEditing" class="content">{{ ticket.employment_type}}</div>
             <select v-else v-model="ticket.employment_type">
               <option v-for="(label, value) in employment_status" :key="value" :value="value">{{ label }}</option>
             </select>
@@ -330,7 +392,12 @@ export default {
         <div class="table-container">
           <div class="ticket-chat">
             <div v-for="comment in ticketComments" :key="comment.id" class="ticket-description">
-              <p>{{ comment.comment }}</p>
+              <p>
+                <span :class="{ 'sender-name': comment.isSender, 'other-user-name': !comment.isSender }">
+                  {{ comment.f_name }} {{ comment.l_name }}:
+                </span>
+                {{ comment.comment }}
+              </p>
               <div v-if="comment.attachment" class="attachment">
                 <a :href="getAttachmentUrl(comment.attachment)"
                    :download="comment.attachment.type.startsWith('image') || comment.attachment.type === 'application/pdf' ? '' : comment.attachment.name"
@@ -348,12 +415,17 @@ export default {
                 </a>
               </div>
 
-
+              <div class="comment-actions">
+                <div v-for="event in getCommentEvents(comment.id)" :key="event.event_id">
+                  <span class="action-label">{{ getEventLabel(event.event_type) }}:</span>
+                  <span class="action-details">{{ getEventDetails(event) }}</span>
+                </div>
+              </div>
               <span class="timestamp">{{ comment.created_at }}</span>
             </div>
           </div>
         </div>
-        <div v-if="!isArchive && ticket.status !== 'Closed'" class="ticket-response">
+        <div v-if="!isArchive && ticket.closedOn === ''" class="ticket-response">
           <span v-if="fileUploaded" class="file-uploaded-indicator">File uploaded</span>
           <textarea v-model="responseMessage" placeholder="Write your response for the issue"></textarea>
           <div class="button_extended_container">
@@ -372,6 +444,15 @@ export default {
 
 <style scoped lang="sass">
 @import '../styles/main.sass'
+.sender-name
+  font-weight: bold
+  color: green
+
+
+.other-user-name
+  font-weight: normal
+  color: blue
+
 
 
 </style>
