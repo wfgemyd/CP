@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
                     wbi: user.wbi,
                     uId: user.id,
                 };
-                const token = jwt.sign(tokenPayload, process.env.SECRET, { expiresIn: '1h' });
+                const token = jwt.sign(tokenPayload, process.env.SECRET, { expiresIn: '10h' });
 
                 res.json({ token: token, role: user.role_name, fullName: tokenPayload.fullName, wbi: tokenPayload.wbi, uId: tokenPayload.uId ,success: true });
                 console.log("User logged in successfully");

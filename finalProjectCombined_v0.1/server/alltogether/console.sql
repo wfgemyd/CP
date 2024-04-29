@@ -247,7 +247,9 @@ CREATE INDEX idx_ticket_comment ON Fproject.ticket_comment USING GIN (to_tsvecto
 ---------------------------------------------------------------------------------
     -- Triggers
 -- Trigger for updating ticket status after 14 days of "verifying" status
-CREATE OR REPLACE FUNCTION update_ticket_status()
+
+--pg-cron extension is required to run the cron jobs in PostgreSQL, without it it is not efficient to run the cron jobs in PostgreSQL
+CREATE OR REPLACE FUNCTION Fproject.update_ticket_status()
     RETURNS TRIGGER AS $$
 DECLARE
     days_to_update INT;
@@ -272,7 +274,7 @@ $$
 CREATE TRIGGER trigger_update_ticket_status
 AFTER UPDATE ON Fproject.ticket
 FOR EACH ROW
-EXECUTE FUNCTION update_ticket_status();
+EXECUTE FUNCTION Fproject.update_ticket_status();
 
 
 -- Trigger for new ticket creation
@@ -611,27 +613,34 @@ $$
 -- Function to update user_categories and set completed_at after ticket closure
 CREATE OR REPLACE FUNCTION Fproject.update_user_categories_on_ticket_closure()
     RETURNS TRIGGER AS $$
+DECLARE
+    verifying_status_id INT;
 BEGIN
-    -- Check if the ticket status is being changed to 'Closed'
-    IF NEW.status_id = (SELECT id FROM Fproject.ticket_status WHERE status_name = 'Closed') THEN
-        -- Update or insert the user_categories record
-        INSERT INTO Fproject.user_categories (user_id, category_id, permission_id, position_id)
-        VALUES (NEW.user_id, NEW.category_id, NEW.permission_required, NEW.requested_position)
-        ON CONFLICT (user_id, category_id, permission_id, position_id) DO UPDATE
-            SET permission_id = NEW.permission_required, position_id = NEW.requested_position;
+    -- Fetch the 'Closed' status ID dynamically
+    SELECT id INTO verifying_status_id FROM Fproject.ticket_status WHERE status_name = 'Verifying';
 
-        -- Update the completed_at field to the current timestamp
-        UPDATE Fproject.ticket
-        SET completed_at = CURRENT_TIMESTAMP
-        WHERE id = NEW.id;
+    -- Check if the ticket status is being changed to 'Verifying'
+    IF NEW.status_id = verifying_status_id THEN
+        -- Check if the record already exists
+        IF NOT EXISTS (
+            SELECT 1 FROM Fproject.user_categories
+            WHERE user_id = NEW.user_id
+              AND category_id = NEW.category_id
+              AND permission_id = NEW.permission_required
+              AND position_id = NEW.requested_position
+        ) THEN
+            -- Update or insert the user_categories record
+            INSERT INTO Fproject.user_categories (user_id, category_id, permission_id, position_id)
+            VALUES (NEW.user_id, NEW.category_id, NEW.permission_required, NEW.requested_position)
+            ON CONFLICT (user_id, category_id, permission_id, position_id) DO UPDATE
+                SET permission_id = NEW.permission_required, position_id = NEW.requested_position;
+        END IF;
     END IF;
 
     RETURN NEW;
 END;
 $$
-
     LANGUAGE plpgsql;
-
 
 -- Trigger to call the function after updating a ticket
 CREATE TRIGGER trigger_update_user_categories_on_ticket_closure
@@ -639,6 +648,29 @@ CREATE TRIGGER trigger_update_user_categories_on_ticket_closure
     FOR EACH ROW
     WHEN (OLD.status_id IS DISTINCT FROM NEW.status_id)
 EXECUTE FUNCTION Fproject.update_user_categories_on_ticket_closure();
+
+CREATE OR REPLACE FUNCTION Fproject.update_completed_at()
+    RETURNS TRIGGER AS $$
+DECLARE
+    closed_status_id INT;
+BEGIN
+    -- Fetch the 'Closed' status ID dynamically
+    SELECT id INTO closed_status_id FROM Fproject.ticket_status WHERE status_name = 'Closed';
+
+    -- Check if the status_id has been updated to the 'Closed' status
+    IF NEW.status_id = closed_status_id THEN
+        NEW.completed_at := CURRENT_TIMESTAMP;
+    END IF;
+    RETURN NEW;
+END;
+$$
+    LANGUAGE plpgsql;
+
+CREATE TRIGGER update_completed_at_trigger
+    BEFORE UPDATE ON Fproject.ticket
+    FOR EACH ROW
+    WHEN (OLD.status_id IS DISTINCT FROM NEW.status_id)
+EXECUTE FUNCTION Fproject.update_completed_at();
 ---------------------------------------------------------------------------------
     -- Inserting sample data
 
@@ -696,12 +728,12 @@ INSERT INTO Fproject.certificates (certificate_name, is_permanent, certificate_v
 ('Certified Ethical Hacker (CEH)', TRUE, '2020-01-01', '2025-01-01'),
 ('CompTIA Security+', TRUE, '2020-01-01', '2025-01-01');
 
-INSERT INTO Fproject.ticket_status (status_name, color) VALUES
-('Open', 16711680), -- Red
-('In Progress', 16776960), -- Yellow
-('Verifying', 16776960), -- Yellow
-('Rejected', 255), -- White
-('Closed', 65280); -- Green
+INSERT INTO Fproject.ticket_status (status_name, color, days_to_update) VALUES
+('Open', 16711680, NULL), -- Red
+('In Progress', 16776960, NULL), -- Yellow
+('Verifying', 16776960, 14), -- Yellow
+('Rejected', 255, NULL), -- White
+('Closed', 65280, NULL); -- Green
 
 INSERT INTO Fproject.ticket_priorities (priority_name, color) VALUES
 ('Low', 65280), -- Green
@@ -710,9 +742,13 @@ INSERT INTO Fproject.ticket_priorities (priority_name, color) VALUES
 ('Urgent', 16711680); -- Red
 
 INSERT INTO Fproject.categories (category_name) VALUES
-('Gendalf'),
-('CoolChip'),
-('Banana');
+('Gondor'),
+('Mordor'),
+('Rivendell'),
+('Isengard'),
+('Shire'),
+('Rohan'),
+('Lothlorien');
 
 INSERT INTO Fproject.permissions (permission_name) VALUES
 ('Read'),
@@ -1244,19 +1280,28 @@ CREATE OR REPLACE PROCEDURE Fproject.UpdateTicket(
     p_user_id INT,
     p_new_status VARCHAR DEFAULT NULL,
     p_new_priority VARCHAR DEFAULT NULL,
-    p_new_assigned_to INT DEFAULT NULL,
-    p_new_fallback_approver INT DEFAULT NULL,
-    p_new_category_id INT DEFAULT NULL,
+    p_new_assigned_to_name VARCHAR DEFAULT NULL,
+    p_new_fallback_approver_name VARCHAR DEFAULT NULL,
+    p_new_category_name VARCHAR DEFAULT NULL,
     p_comment TEXT DEFAULT NULL,
     p_file_data BYTEA DEFAULT NULL,
-    p_is_manager_or_admin BOOLEAN DEFAULT FALSE
+    p_is_manager_or_admin BOOLEAN DEFAULT FALSE,
+    p_new_position_name VARCHAR DEFAULT NULL,
+    p_new_permission_name VARCHAR DEFAULT NULL
 )
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_status_id INT;
     v_priority_id INT;
-    v_event_payload JSON;
+    v_position_id INT;
+    v_permission_id INT;
+    v_assigned_to_id INT;
+    v_fallback_approver_id INT;
+    v_category_id INT;
+    v_event_payload JSONB;
+    v_changes JSONB;
 BEGIN
+    v_changes := '{}'::JSONB;
     -- Restrict updates of certain fields to managers or admins
     IF p_is_manager_or_admin THEN
         IF p_new_status IS NOT NULL THEN
@@ -1265,8 +1310,6 @@ BEGIN
                 UPDATE Fproject.ticket SET status_id = v_status_id WHERE id = p_ticket_id;
                 -- Log status change event
                 v_event_payload := json_build_object('action', 'status_change', 'new_status', p_new_status);
-                INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-                VALUES ('status_change', 'ticket', p_ticket_id, v_event_payload, p_user_id);
             END IF;
         END IF;
 
@@ -1276,34 +1319,89 @@ BEGIN
                 UPDATE Fproject.ticket SET priority_id = v_priority_id WHERE id = p_ticket_id;
                 -- Log priority change event
                 v_event_payload := json_build_object('action', 'priority_change', 'new_priority', p_new_priority);
-                INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-                VALUES ('priority_change', 'ticket', p_ticket_id, v_event_payload, p_user_id);
             END IF;
         END IF;
 
-        IF p_new_assigned_to IS NOT NULL THEN
-            UPDATE Fproject.ticket SET assigned_to = p_new_assigned_to WHERE id = p_ticket_id;
-            -- Log assign change event
-            v_event_payload := json_build_object('action', 'assign_change', 'new_assigned_to', p_new_assigned_to);
-            INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-            VALUES ('assign_change', 'ticket', p_ticket_id, v_event_payload, p_user_id);
+        IF p_new_assigned_to_name IS NOT NULL THEN
+            SELECT id INTO v_assigned_to_id FROM Fproject."user" WHERE CONCAT(f_name, ' ', l_name) = p_new_assigned_to_name;
+            IF FOUND THEN
+                UPDATE Fproject.ticket SET assigned_to = v_assigned_to_id WHERE id = p_ticket_id;
+                -- Log assign change event
+                v_event_payload := json_build_object('action', 'assign_change', 'new_assigned_to', p_new_assigned_to_name);
+            END IF;
         END IF;
 
-        IF p_new_fallback_approver IS NOT NULL THEN
-            UPDATE Fproject.ticket SET fallback_approver = p_new_fallback_approver WHERE id = p_ticket_id;
-            -- Log fallback_approver change event
-            v_event_payload := json_build_object('action', 'fallback_approver_change', 'new_fallback_approver', p_new_fallback_approver);
-            INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-            VALUES ('fallback_approver_change', 'ticket', p_ticket_id, v_event_payload, p_user_id);
+        IF p_new_fallback_approver_name IS NOT NULL THEN
+            SELECT id INTO v_fallback_approver_id FROM Fproject."user" WHERE CONCAT(f_name, ' ', l_name) = p_new_fallback_approver_name;
+            IF FOUND THEN
+                UPDATE Fproject.ticket SET fallback_approver = v_fallback_approver_id WHERE id = p_ticket_id;
+                -- Log fallback_approver change event
+                v_event_payload := json_build_object('action', 'fallback_approver_change', 'new_fallback_approver', p_new_fallback_approver_name);
+            END IF;
         END IF;
 
-        IF p_new_category_id IS NOT NULL THEN
-            UPDATE Fproject.ticket SET category_id = p_new_category_id WHERE id = p_ticket_id;
-            -- Log category change event
-            v_event_payload := json_build_object('action', 'category_change', 'new_category_id', p_new_category_id);
-            INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-            VALUES ('category_change', 'ticket', p_ticket_id, v_event_payload, p_user_id);
+        IF p_new_category_name IS NOT NULL THEN
+            SELECT category_id INTO v_category_id FROM Fproject.categories WHERE category_name = p_new_category_name;
+            IF FOUND THEN
+                UPDATE Fproject.ticket SET category_id = v_category_id WHERE id = p_ticket_id;
+                -- Log category change event
+                v_event_payload := json_build_object('action', 'category_change', 'new_category_id', p_new_category_name);
+            END IF;
         END IF;
+
+        IF p_new_position_name IS NOT NULL THEN
+            SELECT id INTO v_position_id FROM Fproject.position WHERE pos_name = p_new_position_name;
+            IF FOUND THEN
+                UPDATE Fproject.ticket SET requested_position = v_position_id WHERE id = p_ticket_id;
+                -- Log position change event
+                v_event_payload := json_build_object('action', 'position_change', 'new_position', p_new_position_name);
+            END IF;
+        END IF;
+
+        IF p_new_permission_name IS NOT NULL THEN
+            SELECT id INTO v_permission_id FROM Fproject.permissions WHERE permission_name = p_new_permission_name;
+            IF FOUND THEN
+                UPDATE Fproject.ticket SET permission_required = v_permission_id WHERE id = p_ticket_id;
+                -- Log permission change event
+                v_event_payload := json_build_object('action', 'permission_change', 'new_permission', p_new_permission_name);
+            END IF;
+        END IF;
+    END IF;
+
+    -- Collect the changes made to the ticket
+    IF p_new_status IS NOT NULL THEN
+        v_changes := jsonb_set(v_changes, '{status}', to_jsonb(p_new_status));
+    END IF;
+
+    IF p_new_priority IS NOT NULL THEN
+        v_changes := jsonb_set(v_changes, '{priority}', to_jsonb(p_new_priority));
+    END IF;
+
+    IF p_new_assigned_to_name IS NOT NULL THEN
+        v_changes := jsonb_set(v_changes, '{assigned_to}', to_jsonb(p_new_assigned_to_name));
+    END IF;
+
+    IF p_new_fallback_approver_name IS NOT NULL THEN
+        v_changes := jsonb_set(v_changes, '{fallback_approver}', to_jsonb(p_new_fallback_approver_name));
+    END IF;
+
+    IF p_new_category_name IS NOT NULL THEN
+        v_changes := jsonb_set(v_changes, '{category}', to_jsonb(p_new_category_name));
+    END IF;
+
+    IF p_new_position_name IS NOT NULL THEN
+        v_changes := jsonb_set(v_changes, '{position}', to_jsonb(p_new_position_name));
+    END IF;
+
+    IF p_new_permission_name IS NOT NULL THEN
+        v_changes := jsonb_set(v_changes, '{permission}', to_jsonb(p_new_permission_name));
+    END IF;
+
+    -- Store the consolidated changes in the event store
+    IF v_changes <> '{}'::JSONB THEN
+        v_event_payload := jsonb_build_object('action', 'ticket_updated', 'changes', v_changes);
+        INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
+        VALUES ('ticket_updated', 'ticket', p_ticket_id, v_event_payload, p_user_id);
     END IF;
 
     -- Add a comment and file if provided
@@ -1321,32 +1419,11 @@ BEGIN
         RAISE EXCEPTION 'User with ID % does not exist.', p_user_id;
     END IF;
 
--- Check if the category exists
-    IF p_new_category_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Fproject.categories WHERE category_id = p_new_category_id) THEN
-        RAISE EXCEPTION 'Category with ID % does not exist.', p_new_category_id;
-    END IF;
-
--- Check if the assigned user exists
-    IF p_new_assigned_to IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Fproject."user" WHERE id = p_new_assigned_to) THEN
-        RAISE EXCEPTION 'User with ID % does not exist.', p_new_assigned_to;
-    END IF;
-
--- Check if the fallback approver exists
-    IF p_new_fallback_approver IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Fproject."user" WHERE id = p_new_fallback_approver) THEN
-        RAISE EXCEPTION 'User with ID % does not exist.', p_new_fallback_approver;
-    END IF;
-
-    -- Check if the user has permission to update the ticket
-    IF NOT p_is_manager_or_admin AND NOT EXISTS (
-        SELECT 1 FROM Fproject.ticket WHERE id = p_ticket_id AND user_id = p_user_id
-    ) THEN
-        RAISE EXCEPTION 'User with ID % does not have permission to update this ticket.', p_user_id;
-    END IF;
-
     -- Update the updated_at timestamp
     UPDATE Fproject.ticket SET updated_at = CURRENT_TIMESTAMP WHERE id = p_ticket_id;
 END;
 $$;
+
 
 -- Stored procedure to close a ticket or delete it if it's within 5 minutes of creation
 CREATE OR REPLACE PROCEDURE Fproject.CloseOrDeleteTicket(p_ticket_id INT, p_user_id INT)

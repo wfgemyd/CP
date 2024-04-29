@@ -21,7 +21,13 @@ router.get('/:ticketId/details', async (req, res) => {
     try {
         const { ticketId } = req.params;
         const ticketDetails = await db.query('SELECT * FROM Fproject.ticket WHERE id = $1', [ticketId]);
-        const ticketComments = await db.query('SELECT * FROM Fproject.ticket_comment WHERE ticket_id = $1', [ticketId]);
+        const ticketComments = await db.query(`
+            SELECT tc.*, u.f_name, u.l_name
+            FROM Fproject.ticket_comment tc
+                     JOIN Fproject."user" u ON tc.user_id = u.id
+            WHERE tc.ticket_id = $1
+            ORDER BY tc.created_at
+        `, [ticketId]);
         const ticketEvents = await db.query('SELECT * FROM Fproject.event_store WHERE aggregate_id = $1', [ticketId]);
 
         // Convert attachment data to base64
@@ -57,7 +63,6 @@ router.post('/:ticketId/comment', upload.single('attachment'), async (req, res) 
         const { ticketId } = req.params;
         const { userId, comment } = req.body;
         const attachment = req.file ? req.file.buffer : null;
-        console.log(req.file);
         const attachmentName = req.file ? req.file.originalname : null; // Get the original file name
         const attachmentType = req.file ? req.file.mimetype : null;
 
@@ -88,80 +93,105 @@ router.get('/options', async (req, res) => {
     }
 });
 
+
 router.put('/:id', async (req, res) => {
     try {
-        const ticketId = req.params.id;
+        const ticketId = parseInt(req.params.id, 10); // Cast to integer
         const updatedTicket = req.body;
+        console.log(updatedTicket);
+        const userId = parseInt(req.user.uId, 10); // Cast to integer
+
+
         // Start a transaction
         await db.query('BEGIN');
 
         // Update the ticket fields
-        await db.query(`
-            UPDATE Fproject.ticket
-            SET updated_at = CURRENT_TIMESTAMP
-            WHERE id = $1 
-        `, [ticketId]);
+        //await db.query(`
+        //    UPDATE Fproject.ticket
+        //    SET updated_at = CURRENT_TIMESTAMP
+        //    WHERE id = $1
+        //`, [ticketId]);
 
-
-
-        // Update the ticket priority
+// Call the UpdateTicket stored procedure with the user ID
+        console.log(ticketId, userId, updatedTicket.status_name, updatedTicket.priority_name, updatedTicket.assigned_to_name, null, updatedTicket.category_name, null, null, true, updatedTicket.permission_required, updatedTicket.requester_position);
+        await db.query('CALL Fproject.UpdateTicket($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
+            ticketId,
+            userId,
+            updatedTicket.status_name,
+            updatedTicket.priority_name,
+            updatedTicket.assigned_to_name,
+            null, // p_new_fallback_approver_name
+            updatedTicket.category_name,
+            null, // p_comment
+            null, // p_file_data
+            true, // p_is_manager_or_admin
+            updatedTicket.requester_position, // p_new_position_name
+            updatedTicket.permission_required // p_new_permission_name
+        ]);
+// Update the ticket priority
         if (updatedTicket.priority_name) {
-            const priorityId = await db.query(`
-                SELECT id FROM Fproject.ticket_priorities WHERE priority_name = $1
-            `, [updatedTicket.priority_name]);
+            const priorityResult = await db.query(`
+        SELECT id FROM Fproject.ticket_priorities WHERE priority_name = $1
+    `, [updatedTicket.priority_name]);
+            const priorityId = parseInt(priorityResult.rows[0].id, 10); // Cast to integer
             await db.query(`
-                UPDATE Fproject.ticket SET priority_id = $1 WHERE id = $2
-            `, [priorityId.rows[0].id, ticketId]);
+        UPDATE Fproject.ticket SET priority_id = $1 WHERE id = $2
+    `, [priorityId, ticketId]);
         }
 
-        // Update the assigned user
+// Update the assigned user
         if (updatedTicket.assigned_to_name) {
-            const assignedToId = await db.query(`
-                SELECT id FROM Fproject."user" WHERE CONCAT(f_name, ' ', l_name) = $1
-            `, [updatedTicket.assigned_to_name]);
+            const assignedToResult = await db.query(`
+        SELECT id FROM Fproject."user" WHERE CONCAT(f_name, ' ', l_name) = $1
+    `, [updatedTicket.assigned_to_name]);
+            const assignedToId = parseInt(assignedToResult.rows[0].id, 10); // Cast to integer
             await db.query(`
-                UPDATE Fproject.ticket SET assigned_to = $1 WHERE id = $2
-            `, [assignedToId.rows[0].id, ticketId]);
+        UPDATE Fproject.ticket SET assigned_to = $1 WHERE id = $2
+    `, [assignedToId, ticketId]);
         }
 
-        // Update the ticket category
+// Update the ticket category
         if (updatedTicket.category_name) {
-            const categoryId = await db.query(`
-                SELECT category_id FROM Fproject.categories WHERE category_name = $1
-            `, [updatedTicket.category_name]);
+            const categoryResult = await db.query(`
+        SELECT category_id FROM Fproject.categories WHERE category_name = $1
+    `, [updatedTicket.category_name]);
+            const categoryId = parseInt(categoryResult.rows[0].category_id, 10); // Cast to integer
             await db.query(`
-                UPDATE Fproject.ticket SET category_id = $1 WHERE id = $2
-            `, [categoryId.rows[0].category_id, ticketId]);
+        UPDATE Fproject.ticket SET category_id = $1 WHERE id = $2
+    `, [categoryId, ticketId]);
         }
 
-        // Update the permission required
+// Update the permission required
         if (updatedTicket.permission_required) {
-            const permissionId = await db.query(`
-                SELECT id FROM Fproject.permissions WHERE permission_name = $1
-            `, [updatedTicket.permission_required]);
+            const permissionResult = await db.query(`
+        SELECT id FROM Fproject.permissions WHERE permission_name = $1
+    `, [updatedTicket.permission_required]);
+            const permissionId = parseInt(permissionResult.rows[0].id, 10); // Cast to integer
             await db.query(`
-                UPDATE Fproject.ticket SET permission_required = $1 WHERE id = $2
-            `, [permissionId.rows[0].id, ticketId]);
+        UPDATE Fproject.ticket SET permission_required = $1 WHERE id = $2
+    `, [permissionId, ticketId]);
         }
 
-        //Update the role required
+// Update the role required
         if (updatedTicket.requester_position) {
-            const positionId = await db.query(`
+            const positionResult = await db.query(`
         SELECT id FROM Fproject.position WHERE pos_name = $1
     `, [updatedTicket.requester_position]);
+            const positionId = parseInt(positionResult.rows[0].id, 10); // Cast to integer
             await db.query(`
-                UPDATE Fproject.ticket SET requested_position = $1 WHERE id = $2
-            `, [positionId.rows[0].id, ticketId]);
+        UPDATE Fproject.ticket SET requested_position = $1 WHERE id = $2
+    `, [positionId, ticketId]);
         }
 
-        // Update the ticket status
+// Update the ticket status
         if (updatedTicket.status_name) {
-            const statusId = await db.query(`
-                SELECT id FROM Fproject.ticket_status WHERE status_name = $1
-            `, [updatedTicket.status_name]);
+            const statusResult = await db.query(`
+        SELECT id FROM Fproject.ticket_status WHERE status_name = $1
+    `, [updatedTicket.status_name]);
+            const statusId = parseInt(statusResult.rows[0].id, 10); // Cast to integer
             await db.query(`
-                UPDATE Fproject.ticket SET status_id = $1 WHERE id = $2
-            `, [statusId.rows[0].id, ticketId]);
+        UPDATE Fproject.ticket SET status_id = $1 WHERE id = $2
+    `, [statusId, ticketId]);
         }
 
         // Commit the transaction
