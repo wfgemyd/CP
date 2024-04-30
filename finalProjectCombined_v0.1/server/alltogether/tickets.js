@@ -29,7 +29,6 @@ router.get('/:ticketId/details', async (req, res) => {
             ORDER BY tc.created_at
         `, [ticketId]);
         const ticketEvents = await db.query('SELECT * FROM Fproject.event_store WHERE aggregate_id = $1', [ticketId]);
-
         // Convert attachment data to base64
         const commentsWithAttachments = ticketComments.rows.map(comment => {
             if (comment.attachment) {

@@ -1274,6 +1274,7 @@ BEGIN
 END;
 $$;
 
+
 -- Stored procedure to update a ticket
 CREATE OR REPLACE PROCEDURE Fproject.UpdateTicket(
     p_ticket_id INT,
@@ -1300,104 +1301,96 @@ DECLARE
     v_category_id INT;
     v_event_payload JSONB;
     v_changes JSONB;
+    v_created_at TIMESTAMP;
+    v_updated_at TIMESTAMP;
+    v_time_diff INTERVAL;
+    v_comment_id INT;
+    v_comment_event_payload JSONB;
 BEGIN
     v_changes := '{}'::JSONB;
+
+    -- Get the created_at and updated_at timestamps for the ticket
+    SELECT created_at, updated_at INTO v_created_at, v_updated_at
+    FROM Fproject.ticket
+    WHERE id = p_ticket_id;
+
+    -- Calculate the time difference between created_at and updated_at
+    v_time_diff := v_updated_at - v_created_at;
+
     -- Restrict updates of certain fields to managers or admins
     IF p_is_manager_or_admin THEN
         IF p_new_status IS NOT NULL THEN
             SELECT id INTO v_status_id FROM Fproject.ticket_status WHERE status_name = p_new_status;
-            IF FOUND THEN
+            IF FOUND AND v_status_id <> (SELECT status_id FROM Fproject.ticket WHERE id = p_ticket_id) THEN
                 UPDATE Fproject.ticket SET status_id = v_status_id WHERE id = p_ticket_id;
-                -- Log status change event
-                v_event_payload := json_build_object('action', 'status_change', 'new_status', p_new_status);
+                v_changes := jsonb_set(v_changes, '{status}', to_jsonb(p_new_status));
+                v_event_payload := jsonb_build_object('action', 'status_change', 'new_status', p_new_status);
+
             END IF;
         END IF;
 
         IF p_new_priority IS NOT NULL THEN
             SELECT id INTO v_priority_id FROM Fproject.ticket_priorities WHERE priority_name = p_new_priority;
-            IF FOUND THEN
+            IF FOUND AND v_priority_id <> (SELECT priority_id FROM Fproject.ticket WHERE id = p_ticket_id) THEN
                 UPDATE Fproject.ticket SET priority_id = v_priority_id WHERE id = p_ticket_id;
-                -- Log priority change event
-                v_event_payload := json_build_object('action', 'priority_change', 'new_priority', p_new_priority);
+                v_changes := jsonb_set(v_changes, '{priority}', to_jsonb(p_new_priority));
+                v_event_payload := jsonb_build_object('action', 'priority_change', 'new_priority', p_new_priority);
+
             END IF;
         END IF;
 
         IF p_new_assigned_to_name IS NOT NULL THEN
             SELECT id INTO v_assigned_to_id FROM Fproject."user" WHERE CONCAT(f_name, ' ', l_name) = p_new_assigned_to_name;
-            IF FOUND THEN
+            IF FOUND AND v_assigned_to_id <> (SELECT assigned_to FROM Fproject.ticket WHERE id = p_ticket_id) THEN
                 UPDATE Fproject.ticket SET assigned_to = v_assigned_to_id WHERE id = p_ticket_id;
-                -- Log assign change event
-                v_event_payload := json_build_object('action', 'assign_change', 'new_assigned_to', p_new_assigned_to_name);
+                v_changes := jsonb_set(v_changes, '{assigned_to}', to_jsonb(p_new_assigned_to_name));
+                v_event_payload := jsonb_build_object('action', 'assign_change', 'new_assigned_to', p_new_assigned_to_name);
+
             END IF;
         END IF;
 
         IF p_new_fallback_approver_name IS NOT NULL THEN
             SELECT id INTO v_fallback_approver_id FROM Fproject."user" WHERE CONCAT(f_name, ' ', l_name) = p_new_fallback_approver_name;
-            IF FOUND THEN
+            IF FOUND AND v_fallback_approver_id <> (SELECT fallback_approver FROM Fproject.ticket WHERE id = p_ticket_id) THEN
                 UPDATE Fproject.ticket SET fallback_approver = v_fallback_approver_id WHERE id = p_ticket_id;
-                -- Log fallback_approver change event
-                v_event_payload := json_build_object('action', 'fallback_approver_change', 'new_fallback_approver', p_new_fallback_approver_name);
+                v_changes := jsonb_set(v_changes, '{fallback_approver}', to_jsonb(p_new_fallback_approver_name));
+                v_event_payload := jsonb_build_object('action', 'fallback_approver_change', 'new_fallback_approver', p_new_fallback_approver_name);
+
             END IF;
         END IF;
 
         IF p_new_category_name IS NOT NULL THEN
             SELECT category_id INTO v_category_id FROM Fproject.categories WHERE category_name = p_new_category_name;
-            IF FOUND THEN
+            IF FOUND AND v_category_id <> (SELECT category_id FROM Fproject.ticket WHERE id = p_ticket_id) THEN
                 UPDATE Fproject.ticket SET category_id = v_category_id WHERE id = p_ticket_id;
-                -- Log category change event
-                v_event_payload := json_build_object('action', 'category_change', 'new_category_id', p_new_category_name);
+                v_changes := jsonb_set(v_changes, '{category}', to_jsonb(p_new_category_name));
+                v_event_payload := jsonb_build_object('action', 'category_change', 'new_category', p_new_category_name);
+
             END IF;
         END IF;
 
         IF p_new_position_name IS NOT NULL THEN
             SELECT id INTO v_position_id FROM Fproject.position WHERE pos_name = p_new_position_name;
-            IF FOUND THEN
+            IF FOUND AND v_position_id <> (SELECT requested_position FROM Fproject.ticket WHERE id = p_ticket_id) THEN
                 UPDATE Fproject.ticket SET requested_position = v_position_id WHERE id = p_ticket_id;
-                -- Log position change event
-                v_event_payload := json_build_object('action', 'position_change', 'new_position', p_new_position_name);
+                v_changes := jsonb_set(v_changes, '{position}', to_jsonb(p_new_position_name));
+                v_event_payload := jsonb_build_object('action', 'position_change', 'new_position', p_new_position_name);
+
             END IF;
         END IF;
 
         IF p_new_permission_name IS NOT NULL THEN
             SELECT id INTO v_permission_id FROM Fproject.permissions WHERE permission_name = p_new_permission_name;
-            IF FOUND THEN
+            IF FOUND AND v_permission_id <> (SELECT permission_required FROM Fproject.ticket WHERE id = p_ticket_id) THEN
                 UPDATE Fproject.ticket SET permission_required = v_permission_id WHERE id = p_ticket_id;
-                -- Log permission change event
-                v_event_payload := json_build_object('action', 'permission_change', 'new_permission', p_new_permission_name);
+                v_changes := jsonb_set(v_changes, '{permission}', to_jsonb(p_new_permission_name));
+                v_event_payload := jsonb_build_object('action', 'permission_change', 'new_permission', p_new_permission_name);
+
             END IF;
         END IF;
     END IF;
 
-    -- Collect the changes made to the ticket
-    IF p_new_status IS NOT NULL THEN
-        v_changes := jsonb_set(v_changes, '{status}', to_jsonb(p_new_status));
-    END IF;
-
-    IF p_new_priority IS NOT NULL THEN
-        v_changes := jsonb_set(v_changes, '{priority}', to_jsonb(p_new_priority));
-    END IF;
-
-    IF p_new_assigned_to_name IS NOT NULL THEN
-        v_changes := jsonb_set(v_changes, '{assigned_to}', to_jsonb(p_new_assigned_to_name));
-    END IF;
-
-    IF p_new_fallback_approver_name IS NOT NULL THEN
-        v_changes := jsonb_set(v_changes, '{fallback_approver}', to_jsonb(p_new_fallback_approver_name));
-    END IF;
-
-    IF p_new_category_name IS NOT NULL THEN
-        v_changes := jsonb_set(v_changes, '{category}', to_jsonb(p_new_category_name));
-    END IF;
-
-    IF p_new_position_name IS NOT NULL THEN
-        v_changes := jsonb_set(v_changes, '{position}', to_jsonb(p_new_position_name));
-    END IF;
-
-    IF p_new_permission_name IS NOT NULL THEN
-        v_changes := jsonb_set(v_changes, '{permission}', to_jsonb(p_new_permission_name));
-    END IF;
-
-    -- Store the consolidated changes in the event store
+    -- Store the consolidated changes in the event store if there are any changes
     IF v_changes <> '{}'::JSONB THEN
         v_event_payload := jsonb_build_object('action', 'ticket_updated', 'changes', v_changes);
         INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
@@ -1407,11 +1400,19 @@ BEGIN
     -- Add a comment and file if provided
     IF p_comment IS NOT NULL OR p_file_data IS NOT NULL THEN
         INSERT INTO Fproject.ticket_comment (ticket_id, user_id, comment, file_data, created_at)
-        VALUES (p_ticket_id, p_user_id, p_comment, p_file_data, CURRENT_TIMESTAMP);
+        VALUES (p_ticket_id, p_user_id, p_comment, p_file_data, CURRENT_TIMESTAMP)
+        RETURNING id INTO v_comment_id;
+
         -- Log comment/file addition event
-        v_event_payload := json_build_object('action', 'comment_file_added', 'comment', p_comment);
-        INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-        VALUES ('comment_file_added', 'ticket', p_ticket_id, v_event_payload, p_user_id);
+        IF v_time_diff <= INTERVAL '5 minutes' THEN
+            -- If the update is within 5 minutes of ticket creation/update, log it as part of the comment event
+            v_comment_event_payload := json_build_object('action', 'comment_file_added', 'comment', p_comment, 'comment_id', v_comment_id);
+        ELSE
+            -- Otherwise, log it as a separate event
+            v_comment_event_payload := json_build_object('action', 'comment_file_added', 'comment', p_comment, 'comment_id', v_comment_id);
+            INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
+            VALUES ('comment_file_added', 'ticket', p_ticket_id, v_comment_event_payload, p_user_id);
+        END IF;
     END IF;
 
     -- Check if the user exists
@@ -1422,7 +1423,8 @@ BEGIN
     -- Update the updated_at timestamp
     UPDATE Fproject.ticket SET updated_at = CURRENT_TIMESTAMP WHERE id = p_ticket_id;
 END;
-$$;
+$$
+;
 
 
 -- Stored procedure to close a ticket or delete it if it's within 5 minutes of creation
