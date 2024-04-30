@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const isArchiveRoute = computed(() => route.path.includes('/archive'));
-console.log('isArchiveRoute:', isArchiveRoute.value);
+
 const props = defineProps({
   ticket: Object,
   isArchive: {
@@ -15,7 +15,6 @@ const props = defineProps({
 
 const ticketDetails = ref({});
 const ticketComments = ref([]);
-const ticketEvents = ref([]);
 const ticket_priority = ref({});
 const ticket_status = ref({});
 const required_category = ref({});
@@ -23,6 +22,9 @@ const ticket_manager = ref({});
 const employment_status = ref({});
 const permission_required = ref({});
 const position = ref({});
+const ticketEvents = ref([]);
+let initialTicketDetails = ref({});
+
 
 onMounted(async () => {
   try {
@@ -41,6 +43,15 @@ onMounted(async () => {
       minute: 'numeric',
       hour12: true
     }).replace(',', ' at');
+
+    ticketDetails.value = data.ticket;
+    initialTicketDetails.value = { ...data.ticket }; // Create a copy of the initial ticket details
+
+    ticketEvents.value = data.events.map(event => ({
+      ...event,
+      created_at: event.created_at // Store the raw created_at value
+    }));
+
     // Format the created_at value for each comment
 // Fetch user details for each comment
     ticketComments.value = await Promise.all(data.comments.map(async (comment) => {
@@ -49,22 +60,15 @@ onMounted(async () => {
         ...comment,
         fullName,
         isSender: comment.user_id === parseInt(localStorage.getItem('uId')),
-        created_at: new Date(comment.created_at).toLocaleString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-          hour12: true
-        }).replace(',', ' at')
+        created_at: comment.created_at,
       };
     }));
-    console.log('ticketComments:', ticketComments.value);
-    ticketEvents.value = data.events;
+
     const optionsResponse = await fetch('/api/tickets/options', {
       headers: {
         'Authorization': `${localStorage.getItem('token')}`
       }
+
     });
     const options = await optionsResponse.json();
     ticket_priority.value = options.ticket_priority;
@@ -75,6 +79,8 @@ onMounted(async () => {
     permission_required.value = options.permission_required;
     position.value = options.position;
 
+    associateEventsWithComments();
+
   } catch (error) {
     console.error('Failed to fetch ticket options:', error);
     // Log the error message and stack trace
@@ -82,10 +88,93 @@ onMounted(async () => {
     console.error('Stack trace:', error.stack);
   }
 });
+function associateEventsWithComments() {
+  const timeThreshold = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+  // Associate events with comments
+  ticketComments.value.forEach(comment => {
+    comment.events = ticketEvents.value.filter(event => {
+      const eventDate = new Date(event.created_at);
+      const commentDate = new Date(comment.created_at);
+      const timeDiff = Math.abs(eventDate - commentDate);
+      return timeDiff <= timeThreshold && event.aggregate_id === comment.ticket_id;
+    });
+  });
+
+  // Remove associated events from the main events array
+  ticketEvents.value = ticketEvents.value.filter(event =>
+      !ticketComments.value.some(comment =>
+          comment.events.some(commentEvent => commentEvent.event_id === event.event_id)
+      )
+  );
+
+  // Get unassociated events
+  const unassociatedEvents = getUnassociatedEvents();
+
+  // Combine comments and unassociated events
+  const combinedData = [...ticketComments.value, ...unassociatedEvents];
+console.log('combinedData:', combinedData);
+  // Sort combined data by created_at date
+  combinedData.sort((a, b) => {
+    const dateA = new Date(a.created_at);
+    const dateB = new Date(b.created_at);
+    return dateA - dateB;
+  });
+
+  // Update ticketComments.value with sorted combined data
+  ticketComments.value = combinedData;
+}
+
+function getUnassociatedEvents() {
+  // Assuming ticketEvents.value is an array of event objects
+  return ticketEvents.value.map(event => ({
+    ...event,
+    comment: event.event_type + ': ' + getEventDetails(event), // Construct a comment-like string for events
+    created_at: event.created_at,
+    id: event.event_id, // Ensure each event has a unique key
+    user_id: event.user_id
+  }));
+}
+
+
+function getEventDetails(event) {
+  const payload = event.payload;
+
+  switch (event.event_type) {
+    case 'category_change':
+      return `Category changed to: ${payload.new_category}`;
+    case 'priority_change':
+      return `Priority changed to: ${payload.new_priority}`;
+    case 'position_change':
+      return `Position changed to: ${payload.new_position}`;
+    case 'permission_change':
+      return `Permission changed to: ${payload.new_permission}`;
+    case 'ticket_updated':
+      const changes = payload.changes;
+      const changeDetails = Object.entries(changes)
+          .map(([key, value]) => `${key} changed to: ${value}`)
+          .join(', ');
+      return `Ticket updated: ${changeDetails}`;
+    default:
+      return '';
+  }
+}
+function formatCreatedAt(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  }).replace(',', ' at');
+}
 </script>
 
 <script>
+import {ref} from "vue";
+
 export default {
   props: {
     ticket: Object
@@ -97,6 +186,8 @@ export default {
       fileUploaded: false,
       responseMessage: '',
       userId: localStorage.getItem('uId') || null,
+      ticketDetails: {},
+      initialTicketDetails: {}, // Store the initial ticket details
 
     }
   },
@@ -104,29 +195,47 @@ export default {
     async toggleEditing() {
       if (this.isEditing) {
         try {
-          // Send the updated ticket data to the backend API
+          const updatedFields = {};
+
+          // Compare each field and add it to updatedFields if it has changed
+          if (this.ticket.status !== this.initialTicketDetails.status) {
+            updatedFields.status_name = this.ticket.status;
+          }
+          if (this.ticket.priority !== this.initialTicketDetails.priority) {
+            updatedFields.priority_name = this.ticket.priority;
+          }
+          if (this.ticket.assignedTo !== this.initialTicketDetails.assignedTo) {
+            updatedFields.assigned_to_name = this.ticket.assignedTo;
+          }
+          if (this.ticket.category !== this.initialTicketDetails.category) {
+            updatedFields.category_name = this.ticket.category;
+          }
+          if (this.ticket.permission_required !== this.initialTicketDetails.permission_required) {
+            updatedFields.permission_required = this.ticket.permission_required;
+          }
+          if (this.ticket.requester_position !== this.initialTicketDetails.requester_position) {
+            updatedFields.requester_position = this.ticket.requester_position;
+          }
+          if (this.ticket.employment_type !== this.initialTicketDetails.employment_type) {
+            updatedFields.employment_type = this.ticket.employment_type;
+          }
+
+          // Send only the updated fields to the backend API
           const response = await fetch(`/api/tickets/${this.ticket.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({
-              status_name: this.ticket.status,
-              priority_name: this.ticket.priority,
-              assigned_to_name: this.ticket.assignedTo,
-              category_name: this.ticket.category,
-              permission_required: this.ticket.permission_required,
-              requester_position: this.ticket.requester_position,
-              employment_type: this.ticket.employment_type
-
-
-            })
+            body: JSON.stringify(updatedFields)
           });
 
           if (response.ok) {
             // Update successful, refresh the ticket data
             this.fetchTicketDetails();
+            this.initialTicketDetails = { ...this.ticketDetails }; // Update the initial ticket details
+            this.responseMessage = ''; // Clear the comment input
+
           } else {
             // Handle error case
             console.error('Failed to update ticket:', response.statusText);
@@ -224,11 +333,12 @@ export default {
             'Authorization': `${localStorage.getItem('token')}`
           }
         });
+        console.log('Retrieved ticket details:', response);
         const data = await response.json();
         this.ticketDetails = data.ticket;
-
-        this.ticketComments = data.comments;
+        this.initialTicketDetails = { ...data.ticket }; // Update the initial ticket details
         this.ticketEvents = data.events;
+        console.log('ticketEvents:', this.ticketEvents);
 
 
 
@@ -236,58 +346,7 @@ export default {
         console.error('Failed to fetch ticket details:', error);
       }
     },
-    getCommentEvents(commentId) {
-      if (!this.ticketEvents) {
-        // ticketEvents is not defined yet, return an empty array or handle the case appropriately
-        return [];
-      }
-      return this.ticketEvents.filter(event => event.payload.comment_id === commentId);
-    },
-    getEventLabel(eventType) {
-      switch (eventType) {
-        case 'status_change':
-          return 'Status Changed';
-        case 'priority_change':
-          return 'Priority Changed';
-        case 'project_change':
-          return 'Project Changed';
-        case 'permission_change':
-          return 'Permission Requested';
-        case 'position_change':
-          return 'Role Changed';
-        case 'assign_change':
-          return 'Assigned To';
-        case 'category_change':
-          return 'Category Changed';
-        case 'comment_file_added':
-          return 'Attachment Added';
-        default:
-          return eventType;
-      }
-    },
-    getEventDetails(event) {
-      switch (event.event_type) {
-        case 'status_change':
-          return `From "${event.payload.old_status}" to "${event.payload.new_status}"`;
-        case 'priority_change':
-          return `From "${event.payload.old_priority}" to "${event.payload.new_priority}"`;
-        case 'project_change':
-          return `From "${event.payload.old_project}" to "${event.payload.new_project}"`;
-        case 'permission_change':
-          return `From "${event.payload.old_permission}" to "${event.payload.new_permission}"`;
-        case 'position_change':
-          return `From "${event.payload.old_position}" to "${event.payload.new_position}"`;
-        case 'assign_change':
-          return `From "${event.payload.old_assign}" to "${event.payload.new_assign}"`;
-        case 'category_change':
-          return `From "${event.payload.old_category}" to "${event.payload.new_category}"`;
-        case 'comment_file_added':
-          return `File: ${event.payload.attachment_name}`;
 
-        default:
-          return JSON.stringify(event.payload);
-      }
-    }
   }
 }
 </script>
@@ -306,7 +365,6 @@ export default {
     </div>
 
     <div class="extended-item">
-
       <div class="ticket-summary">
 
         <div class="ticket-info">
@@ -393,13 +451,18 @@ export default {
           <div class="ticket-chat">
             <div v-for="comment in ticketComments" :key="comment.id" class="ticket-description">
               <p>
-                <span :class="{ 'sender-name': comment.isSender, 'other-user-name': !comment.isSender }">
-                  {{ comment.f_name }} {{ comment.l_name }}:
-                </span>
-                {{ comment.comment }}
+                  <span :class="{
+                    'sender-name': comment.isSender,
+                    'other-user-name': !comment.isSender,
+                    'update-label': !(comment.f_name || comment.l_name)
+                  }">
+                    {{ (comment.f_name || comment.l_name) ? `${comment.f_name} ${comment.l_name}` :  `'Update by:'${comment.user_id}` }}:
+                  </span>
+                            {{ comment.comment }}
               </p>
               <div v-if="comment.attachment" class="attachment">
-                <a :href="getAttachmentUrl(comment.attachment)"
+
+              <a :href="getAttachmentUrl(comment.attachment)"
                    :download="comment.attachment.type.startsWith('image') || comment.attachment.type === 'application/pdf' ? '' : comment.attachment.name"
                    target="_blank" class="attachment-link">
                   <span class="attachment-name">{{ comment.attachment.name }}</span>
@@ -415,13 +478,13 @@ export default {
                 </a>
               </div>
 
-              <div class="comment-actions">
-                <div v-for="event in getCommentEvents(comment.id)" :key="event.event_id">
-                  <span class="action-label">{{ getEventLabel(event.event_type) }}:</span>
-                  <span class="action-details">{{ getEventDetails(event) }}</span>
+              <div class="comment-events">
+                <div v-for="event in comment.events" :key="event.event_id">
+                  <span class="event-label">{{ event.event_type}}:</span>
+                  <span class="event-details">{{ getEventDetails(event) }}</span>
                 </div>
               </div>
-              <span class="timestamp">{{ comment.created_at }}</span>
+              <span class="timestamp">{{formatCreatedAt(comment.created_at) }}</span>
             </div>
           </div>
         </div>
@@ -452,6 +515,10 @@ export default {
 .other-user-name
   font-weight: normal
   color: blue
+
+.update-label
+  font-weight: bold
+  color: red
 
 
 
