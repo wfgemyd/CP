@@ -142,7 +142,7 @@ CREATE TABLE Fproject.ticket (
     status_id INT REFERENCES Fproject.ticket_status(id),
     priority_id INT REFERENCES Fproject.ticket_priorities(id),
     user_id INT REFERENCES Fproject."user"(id), -- Assuming there's a 'user' table to reference
-    created_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     completed_at TIMESTAMP NULL,
     assigned_to INT REFERENCES Fproject."user"(id), --to whom the ticket is assigned
@@ -819,88 +819,6 @@ INSERT INTO Fproject.notifications (user_id, ticket_id, notification_type, messa
 (2, 2, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP),
 (2, 3, 'New Ticket', 'A new ticket has been assigned to you.', CURRENT_TIMESTAMP);
 
-INSERT INTO Fproject.event_store (event_type, aggregate_type, aggregate_id, payload, user_id)
-VALUES
-    (
-        'TicketCreated', -- event_type
-        'ticket', -- aggregate_type
-        1, -- aggregate_id: ticket ID
-        json_build_object(
-                'subject', 'Server Maintenance Required',
-                'description', 'The production server needs urgent maintenance due to performance issues.',
-                'priority', 'High',
-                'category', 'Infrastructure',
-                'created_by', 'John Doe'
-        ), -- payload: Detailed ticket creation data
-        1 -- user_id: Assuming the ID of the user who created the ticket is 1
-    ),
-    (
-        'TicketAssigned', -- event_type
-        'ticket', -- aggregate_type
-        1, -- aggregate_id: ticket ID
-        json_build_object(
-                'assigned_to', 'Jane Smith',
-                'assigned_by', 'John Doe',
-                'assigned_at', '2023-06-10 09:30:00'
-        ), -- payload: Detailed ticket assignment data
-        1 -- user_id: Assuming the ID of the user who assigned the ticket is 1
-    ),
-    (
-        'TicketStatusChanged', -- event_type
-        'ticket', -- aggregate_type
-        1, -- aggregate_id: ticket ID
-        json_build_object(
-                'old_status', 'Open',
-                'new_status', 'In Progress',
-                'changed_by', 'Jane Smith',
-                'changed_at', '2023-06-10 10:00:00'
-        ), -- payload: Detailed ticket status change data
-        2 -- user_id: Assuming the ID of the user who changed the status is 2
-    ),
-    (
-        'TicketCommentAdded', -- event_type
-        'ticket', -- aggregate_type
-        1, -- aggregate_id: ticket ID
-        json_build_object(
-                'comment_text', 'I have started working on the server maintenance. Will keep you updated on the progress.',
-                'commented_by', 'Jane Smith',
-                'commented_at', '2023-06-10 10:30:00'
-        ), -- payload: Detailed comment data
-        2 -- user_id: Assuming the ID of the user who added the comment is 2
-    ),
-    (
-        'TicketPriorityChanged', -- event_type
-        'ticket', -- aggregate_type
-        1, -- aggregate_id: ticket ID
-        json_build_object(
-                'old_priority', 'High',
-                'new_priority', 'Urgent',
-                'changed_by', 'John Doe',
-                'changed_at', '2023-06-10 11:00:00'
-        ), -- payload: Detailed ticket priority change data
-        1 -- user_id: Assuming the ID of the user who changed the priority is 1
-    ),
-    (
-        'TicketResolved', -- event_type
-        'ticket', -- aggregate_type
-        1, -- aggregate_id: ticket ID
-        json_build_object(
-                'resolved_by', 'Jane Smith',
-                'resolution_description', 'The server maintenance has been completed successfully. Performance issues have been resolved.',
-                'resolved_at', '2023-06-10 14:00:00'
-        ), -- payload: Detailed ticket resolution data
-        2 -- user_id: Assuming the ID of the user who resolved the ticket is 2
-    ),
-    (
-        'TicketClosed', -- event_type
-        'ticket', -- aggregate_type
-        1, -- aggregate_id: ticket ID
-        json_build_object(
-                'closed_by', 'John Doe',
-                'closed_at', '2023-06-10 15:00:00'
-        ), -- payload: Detailed ticket closure data
-        1 -- user_id: Assuming the ID of the user who closed the ticket is 1
-    );
 
 
 
@@ -1221,58 +1139,48 @@ BEGIN
 END;
 $$;
 
-
--- Stored procedure to create a new ticket
 CREATE OR REPLACE PROCEDURE Fproject.CreateTicket(
     p_subject VARCHAR,
     p_content TEXT,
+    p_status_name VARCHAR,
+    p_priority_name VARCHAR,
     p_user_id INT,
-    p_category_id INT,
-    p_status_name VARCHAR DEFAULT 'Open',
-    p_priority_name VARCHAR DEFAULT 'Medium'
+    p_manager_wbi VARCHAR,
+    p_category_name VARCHAR,
+    p_attachment BYTEA,
+    p_permission_required_name VARCHAR,
+    p_requested_position_name VARCHAR
 )
-LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql AS $$
 DECLARE
     v_status_id INT;
     v_priority_id INT;
-    v_assigned_to INT;
+    v_category_id INT;
+    v_requested_position_id INT;
+    v_manager_id INT;
+    v_permission_required_id INT;
 BEGIN
-    -- Retrieve status_id
+    -- Convert names to IDs
     SELECT id INTO v_status_id FROM Fproject.ticket_status WHERE status_name = p_status_name;
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Status % not found.', p_status_name;
-    END IF;
-
-    -- Retrieve priority_id
     SELECT id INTO v_priority_id FROM Fproject.ticket_priorities WHERE priority_name = p_priority_name;
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Priority % not found.', p_priority_name;
-    END IF;
-
--- Check if the user exists
-    IF NOT EXISTS (SELECT 1 FROM Fproject."user" WHERE id = p_user_id) THEN
-        RAISE EXCEPTION 'User with ID % does not exist.', p_user_id;
-    END IF;
-
--- Check if the category exists
-    IF NOT EXISTS (SELECT 1 FROM Fproject.categories WHERE category_id = p_category_id) THEN
-        RAISE EXCEPTION 'Category with ID % does not exist.', p_category_id;
-    END IF;
-
-    -- Check if the subject and content are not empty
-    IF p_subject IS NULL OR p_subject = '' THEN
-        RAISE EXCEPTION 'Ticket subject cannot be empty.';
-    END IF;
-
-    IF p_content IS NULL OR p_content = '' THEN
-        RAISE EXCEPTION 'Ticket content cannot be empty.';
-    END IF;
+    SELECT category_id INTO v_category_id FROM Fproject.categories WHERE category_name = p_category_name;
+    SELECT id INTO v_requested_position_id FROM Fproject.position WHERE pos_name = p_requested_position_name;
+    SELECT id INTO v_manager_id FROM Fproject."user" WHERE WBI = p_manager_wbi;
+    SELECT id INTO v_permission_required_id FROM Fproject.permissions WHERE permission_name = p_permission_required_name;
 
     -- Insert the ticket
-    INSERT INTO Fproject.ticket(subject, content, status_id, priority_id, user_id, created_at, updated_at, assigned_to, category_id)
-    VALUES (p_subject, p_content, v_status_id, v_priority_id, p_user_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, v_assigned_to, p_category_id);
+    INSERT INTO Fproject.ticket(
+        subject, content, status_id, priority_id, user_id, created_at, category_id, requested_position, attachment, assigned_to, permission_required
+    )
+    VALUES (
+               p_subject, p_content, v_status_id, v_priority_id, p_user_id, CURRENT_TIMESTAMP, v_category_id, v_requested_position_id, p_attachment, v_manager_id, v_permission_required_id
+           );
 END;
-$$;
+$$
+;
+
+
+
 
 
 -- Stored procedure to update a ticket
@@ -1505,6 +1413,7 @@ CREATE OR REPLACE FUNCTION Fproject.get_user_tickets(p_user_id INT)
                      requester_name VARCHAR,
                      requester_position VARCHAR,
                      assigned_to_name VARCHAR,
+                     attachment BYTEA,
                      permission_required VARCHAR,
                      requester_employment_status VARCHAR
                  ) AS $$
@@ -1531,6 +1440,7 @@ BEGIN
                    (SELECT (u2.f_name || ' ' || u2.l_name)::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_name,
                    (SELECT pos.pos_name FROM Fproject.position pos WHERE pos.id = t.requested_position) AS requester_position,
                    (SELECT (u3.f_name || ' ' || u3.l_name)::VARCHAR FROM Fproject."user" u3 WHERE u3.id = t.assigned_to) AS assigned_to_name,
+                   t.attachment,
                    (SELECT p.permission_name FROM Fproject.permissions p WHERE p.id = t.permission_required) AS permission_required,
                    (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status
             FROM Fproject.ticket t
@@ -1552,6 +1462,7 @@ BEGIN
                    (SELECT (u2.f_name || ' ' || u2.l_name)::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_name,
                    (SELECT pos.pos_name FROM Fproject.position pos WHERE pos.id = t.requested_position) AS requester_position,
                    (SELECT (u3.f_name || ' ' || u3.l_name)::VARCHAR FROM Fproject."user" u3 WHERE u3.id = t.assigned_to) AS assigned_to_name,
+                   t.attachment,
                    (SELECT p.permission_name FROM Fproject.permissions p WHERE p.id = t.permission_required) AS permission_required,
                    (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status
             FROM Fproject.ticket t
@@ -1578,6 +1489,7 @@ BEGIN
                    (SELECT (u2.f_name || ' ' || u2.l_name)::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_name,
                    (SELECT pos.pos_name FROM Fproject.position pos WHERE pos.id = t.requested_position) AS requester_position,
                    (SELECT (u3.f_name || ' ' || u3.l_name)::VARCHAR FROM Fproject."user" u3 WHERE u3.id = t.assigned_to) AS assigned_to_name,
+                   t.attachment,
                    (SELECT p.permission_name FROM Fproject.permissions p WHERE p.id = t.permission_required) AS permission_required,
                    (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status
             FROM Fproject.ticket t
@@ -1631,4 +1543,3 @@ $$
     LANGUAGE plpgsql;
 
 select * from Fproject.get_ticket_options();
-

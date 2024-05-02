@@ -11,6 +11,7 @@ const login = require('./alltogether/login.js');
 const onboarding = require('./alltogether/onboarding.js');
 const tickets = require('./alltogether/tickets.js');
 
+
 const app = express();
 
 // Serve the Vue app
@@ -23,6 +24,7 @@ app.use('/login', login);
 app.use('/api', authorize);
 app.use('/api/onboarding',authorize, onboarding);
 app.use('/api/tickets', authorize, tickets);
+app.use('/api/new_ticket', authorize, tickets);
 
 
 // Catch-all route to serve the Vue app for any other requests

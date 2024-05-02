@@ -27,7 +27,7 @@ function authorize(req, res, next) {
         req.user = decoded;
 
         // Check if the route is part of the tickets module and if the role is permitted
-        if (requestedPath.includes('/api/tickets')) {
+        if (requestedPath.includes('/api/tickets' || '/api/new_ticket' || '/api/archive')) {
             const isAllowed = rolePermissions.tickets[req.user.role] || false;
             if (!isAllowed) {
                 return res.status(403).json({ message: 'You do not have permission to access this route' });

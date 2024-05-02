@@ -1,39 +1,134 @@
 <script setup>
-import { ref } from 'vue';
 import Navbar from "./nav_bar.vue";
-import {useRouter} from "vue-router";
+import { useRouter } from "vue-router";
+import { onMounted, ref } from 'vue';
 
+
+const props = defineProps({
+  ticket: Object,
+  isArchive: {
+    type: Boolean,
+    default: false
+  }
+});
 const router = useRouter();
 
-const goTotickets = () => {
-  router.push('/tickets');
-};
+const ticket_priority = ref([]);
+const ticket_status = ref([]);
+const required_category = ref([]);
 
-// Assuming these constants are received from the backend and can be updated dynamically
-const ticket_priority = { low: "low", medium: "medium", high: "high", urgent: "urgent", none: "none"};
-const ticket_status = { open: "open", verifying: "verifying", rejected: "rejected", closed: "closed" };
-const required_category = { gendalf: "gendalf", banana: "banana", coolchip: "coolchip" };
-const ticket_WBI = { WBI1: "WBI1", WBI2: "WBI2", WBI3: "WBI3" };
-const ticket_manager = { manager1: "manager1", manager2: "manager2", manager3: "manager3" };
-const onboarding_was_completed = { false: "false", true: "true" };
-const employment_status = { contractor: "contractor", fullTime: "full-time", partTime: "part-time", intern: "intern" };
-const permission_required = { read: "read", write: "write", none: "none" };
-const user_role = { designer: "designer", developer: "developer", manager: "manager", tester: "tester" };
-const attachment = { none: null };
+const permission_required = ref([]);
+const position = ref([]);
+const ticket_WBI = ref('');
+const selectedFile = ref(null);
+const fileUploaded = ref(false);
 
-// Reactive properties for selected values
-const selectedPriority = ref('');
-const selectedStatus = ref('');
-const selectedCategory = ref('');
-const selectedWBI = ref('');
-const selectedManager = ref('');
-const selectedOnboarding = ref('');
-const selectedEmploymentStatus = ref('');
-const selectedPermissionRequired = ref('');
-const selectedUserRole = ref('');
-const selectedAttachment = ref('');
-const ticketSubject = ref('');
-const ticketDescription = ref('');
+onMounted(async () => {
+  try {
+    const optionsResponse = await fetch('/api/tickets/options', {
+      headers: {
+        'Authorization': `${localStorage.getItem('token')}`
+      }
+    });
+    const options = await optionsResponse.json();
+    ticket_priority.value = options.ticket_priority || {};
+    ticket_status.value = options.ticket_status || {};
+    required_category.value = options.required_category || {};
+    permission_required.value = Object.entries(options.permission_required || {})
+        .filter(([value, label]) => value !== 'None')
+        .reduce((acc, [value, label]) => ({ ...acc, [value]: label }), {});
+    position.value = options.position || {};
+    ticket_WBI.value = localStorage.getItem('wbi');
+  } catch (error) {
+    console.error('Failed to fetch ticket options:', error);
+    console.error('Error message:', error.message);
+    console.error('Stack trace:', error.stack);
+  }
+});
+
+const selectedPriority = ref('Low'); //y
+const selectedStatus = ref('Open'); //n
+const selectedCategory = ref(''); //y
+const selectedManager = ref(''); //y
+const selectedEmploymentStatus = ref(localStorage.getItem('employment_name')); //y
+const selectedPermissionRequired = ref(''); //y
+const selectedUserPosition = ref(''); //y
+const ticketSubject = ref(''); //y
+const ticketDescription = ref(''); //y
+
+async function fetchProjectManager() {
+  try {
+    const response = await fetch(`/api/new_ticket/${selectedCategory.value}/manager`, {
+      headers: {
+        'Authorization': `${localStorage.getItem('token')}`
+      }
+    });
+    const manager = await response.json();
+    console.log('manager:', manager);
+    selectedManager.value = manager.wbi;
+  } catch (error) {
+    console.error('Failed to fetch project manager:', error);
+  }
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+
+  if (file && file.size <= maxSize) {
+    selectedFile.value = file;
+    console.log('selectedFile:', selectedFile.value);
+    fileUploaded.value = true; // Set fileUploaded to true when a file is selected
+  } else {
+    alert('Please select a file with a size less than or equal to 5MB.');
+    selectedFile.value = null;
+    fileUploaded.value = false; // Set fileUploaded to false if no file is selected or size exceeds limit
+  }
+}
+
+
+async function submitTicket() {
+  const formData = new FormData();
+  formData.append('subject', ticketSubject.value);
+  formData.append('content', ticketDescription.value);
+  formData.append('status_name', selectedStatus.value);
+  formData.append('priority_name', selectedPriority.value);
+  formData.append('userId', localStorage.getItem('uId'));
+  formData.append('category_name', selectedCategory.value);
+  formData.append('requested_position', selectedUserPosition.value);
+  formData.append('manager_wbi', selectedManager.value);
+  formData.append('permission_required_name', selectedPermissionRequired.value);
+
+  if (selectedFile.value) {
+    // Append the file data
+    formData.append('file', selectedFile.value);
+
+    // Optionally, append the file name and type as separate fields if needed
+    formData.append('fileName', selectedFile.value.name);
+    formData.append('fileType', selectedFile.value.type);
+  }
+
+  try {
+    const response = await fetch(`/api/tickets/${localStorage.getItem('uId')}/new_ticket`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to submit ticket');
+    }
+
+    const result = await response.json();
+    console.log('Ticket submitted successfully:', result);
+    router.push('/tickets');
+  } catch (error) {
+    console.error('Error submitting ticket:', error);
+  }
+}
+
 </script>
 
 <script>
@@ -46,30 +141,6 @@ export default {
   },
   components: {
     Tooltip,
-  },
-  data() {
-    return {
-      selectedFile: null,
-      fileUploaded: false
-    }
-  },
-  methods: {
-    toggleEditing() {
-      this.isEditing = !this.isEditing;
-    },
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      const maxSize = 25 * 1024 * 1024; // 25MB in bytes
-
-      if (file && file.size <= maxSize) {
-        this.selectedFile = file;
-        this.fileUploaded = true; // Set fileUploaded to true when a file is selected
-      } else {
-        alert('Please select a file with a size less than or equal to 25MB.');
-        this.selectedFile = null;
-        this.fileUploaded = false; // Set fileUploaded to false if no file is selected or size exceeds limit
-      }
-    }
   }
 }
 
@@ -119,8 +190,8 @@ export default {
                 </div>
               </Tooltip>
             </div>
-            <select id="WBI" name="WBI" v-model="selectedWBI">
-              <option v-for="(label, value) in ticket_WBI" :key="value" :value="value">{{ label }}</option>
+            <select id="WBI" name="WBI" v-model="ticket_WBI" disabled>
+              <option :value="ticket_WBI">{{ ticket_WBI }}</option>
             </select>
           </li>
           <li>
@@ -132,7 +203,7 @@ export default {
                 </div>
               </Tooltip>
             </div>
-            <select id="priority" name="priority" v-model="selectedPriority">
+            <select id="priority" name="priority" v-model="selectedPriority" disabled>
               <option v-for="(label, value) in ticket_priority" :key="value" :value="value">{{ label }}</option>
             </select>
           </li>
@@ -145,10 +216,11 @@ export default {
                 </div>
               </Tooltip>
             </div>
-            <select id="employment_status" name="employment_status" v-model="selectedEmploymentStatus">
-              <option v-for="(label, value) in employment_status" :key="value" :value="value">{{ label }}</option>
+            <select id="employment_status" name="employment_status" v-model="selectedEmploymentStatus" disabled>
+              <option  :value="selectedEmploymentStatus">{{ selectedEmploymentStatus }}</option>
             </select>
           </li>
+
           <li>
             <div class="label-container">
               <label for="manager">User's Direct Manager:</label>
@@ -158,8 +230,8 @@ export default {
                 </div>
               </Tooltip>
             </div>
-            <select id="manager" name="manager" v-model="selectedManager">
-              <option v-for="(label, value) in ticket_manager" :key="value" :value="value">{{ label }}</option>
+            <select id="manager" name="manager" v-model="selectedManager" disabled>
+              <option :value="selectedManager">{{ selectedManager }}</option>
             </select>
           </li>
         </ul>
@@ -173,7 +245,7 @@ export default {
                 </div>
               </Tooltip>
             </div>
-            <select id="category" name="category" v-model="selectedCategory">
+            <select id="category" name="category" v-model="selectedCategory" @change="fetchProjectManager">
               <option v-for="(label, value) in required_category" :key="value" :value="value">{{ label }}</option>
             </select>
           </li>
@@ -199,8 +271,8 @@ export default {
                 </div>
               </Tooltip>
             </div>
-            <select id="user_role" name="selectedUserRole" v-model="selectedUserRole">
-              <option v-for="(label, value) in user_role" :key="value" :value="value">{{ label }}</option>
+            <select id="user_role" name="selectedUserRole" v-model="selectedUserPosition">
+              <option v-for="(label, value) in position" :key="value" :value="value">{{ label }}</option>
             </select>
           </li>
 
@@ -216,7 +288,7 @@ export default {
       </ul>
       </div>
       <div class="finalize_ticket">
-        <button class="finalize_ticket_btn" @click="goTotickets">Submit</button>
+        <button class="finalize_ticket_btn" @click="submitTicket">Submit</button>
       </div>
     </div>
     </div>

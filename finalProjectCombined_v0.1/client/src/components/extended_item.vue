@@ -446,6 +446,20 @@ export default {
         <div class="ticket-description">
           <p><span class="label"></span> {{ticketDetails.content }}</p>
           <span class="timestamp">{{ ticketDetails.created_at }}</span>
+          <!-- Display or link the attachment -->
+          <div v-if="ticket.attachment_">
+            <div v-if="['image/jpeg', 'image/png'].includes(ticket.attachment_.type)">
+              <img :src="getAttachmentUrl(ticket.attachment_)" alt="Attachment">
+            </div>
+            <div v-else-if="ticket.attachment_.type === 'application/pdf'">
+              <embed :src="getAttachmentUrl(ticket.attachment_)" type="application/pdf" style="width:500px; height:600px;">
+            </div>
+            <div v-else>
+              <a :href="getAttachmentUrl(ticket.attachment_)" :download="ticket.attachment_.name">
+                Download {{ ticket.attachment_.name }}
+              </a>
+            </div>
+          </div>
         </div>
         <div class="table-container">
           <div class="ticket-chat">

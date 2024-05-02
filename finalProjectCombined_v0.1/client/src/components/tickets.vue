@@ -13,12 +13,14 @@ import Navbar from "./nav_bar.vue";
 import { useRouter } from 'vue-router';
 import TicketItem from './item_in_tickets.vue';
 import ExtendedItem from './extended_item.vue';
+import NewTicket from './new_ticket.vue';
 
 export default {
   components: {
     Navbar,
     TicketItem,
-    ExtendedItem
+    ExtendedItem,
+    NewTicket
   },
   data() {
     return {
@@ -58,25 +60,27 @@ export default {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const jsonTickets = await response.json();
-        this.tickets = jsonTickets.map(ticket => ({
-          ...ticket,
-          title: ticket.subject,
-          content: ticket.content,
-          createdOn: ticket.created_at.split('T')[0],
-          updatedOn: ticket.updated_at.split('T')[0],
-          closedOn: ticket.completed_at ? ticket.completed_at.split('T')[0] : '',
-          status: ticket.status_name,
-          priority: ticket.priority_name,
-          id: ticket.ticket_id,
-          category: ticket.category_name,
-          assignedTo: ticket.assigned_to_name,
-          requester: ticket.requester_name,
-          permission_required: ticket.permission_required,
-          requester_position: ticket.requester_position,
-          employment_type: ticket.requester_employment_status,
+          this.tickets = jsonTickets.map(ticket => ({
+            ...ticket,
+            title: ticket.subject,
+            content: ticket.content,
+            createdOn: ticket.created_at?.split('T')[0] || '',
+            updatedOn: ticket.updated_at?.split('T')[0] || '',
+            closedOn: ticket.completed_at ? ticket.completed_at.split('T')[0] : '',
+            status: ticket.status_name,
+            priority: ticket.priority_name,
+            id: ticket.ticket_id,
+            category: ticket.category_name,
+            assignedTo: ticket.assigned_to_name,
+            requester: ticket.requester_name,
+            permission_required: ticket.permission_required,
+            attachment_: ticket.attachment,
+            requester_position: ticket.requester_position,
+            employment_type: ticket.requester_employment_status,
 
 
-        }));
+          }));
+
         this.originalTickets = [...this.tickets];
         this.filterTickets(this.selectedStatus);
       } catch (err) {
