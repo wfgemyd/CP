@@ -12,18 +12,19 @@ const props = defineProps({
   }
 });
 
-const ticket_priority = ref([]);
-const ticket_status = ref([]);
-const required_category = ref([]);
-const permission_required = ref([]);
+const ticket_priority = ref({});
+const ticket_status = ref({});
+const required_category = ref({});
+const permission_required = ref({});
+const ticket_manager = ref({});
 const position = ref([]);
 const ticket_WBI = ref('');
-const selectedStatus = ref('Closed');
+const employment_status = ref({});
 const archiveItems = ref([]);
 
 
 const currentPage = ref(1);
-const rows = ref(2); // Number of rows to display in the table per page
+const rows = ref(10); // Number of rows to display in the table per page
 
 const totalPages = ref(0);
 async function totalPagesfunc() {
@@ -45,6 +46,7 @@ onMounted(async () => {
       }
     });
     const options = await optionsResponse.json();
+    console.log('options:', options);
     ticket_priority.value = options.ticket_priority || {};
     ticket_status.value = options.ticket_status || {};
     required_category.value = options.required_category || {};
@@ -52,6 +54,8 @@ onMounted(async () => {
         .filter(([value, label]) => value !== 'None')
         .reduce((acc, [value, label]) => ({ ...acc, [value]: label }), {});
     position.value = options.position || {};
+    ticket_manager.value = options.ticket_manager || {};
+    employment_status.value = options.employment_status || {};
     ticket_WBI.value = localStorage.getItem('wbi');
     await fetchTickets();
   } catch (error) {
@@ -60,8 +64,6 @@ onMounted(async () => {
     console.error('Stack trace:', error.stack);
   }
 });
-
-
 
 async function fetchTickets() {
   try {
@@ -95,18 +97,13 @@ async function fetchTickets() {
     }));
     filteredResults.value = archiveItems.value; // Initialize filteredResults with all tickets
     totalPages.value = await totalPagesfunc();
-    console.log('pg:', totalPages.value);
-  console.log('Fetched tickets:', archiveItems.value);
+
   } catch (err) {
     console.error('Error fetching tickets:', err);
   }
 }
 
 const showMenu = ref(false);
-const ticket_manager = { manager1: "Manager", manager2: "manager2", manager3: "manager3" };
-const employment_status = { contractor: "contractor", fullTime: "full-time", partTime: "part-time", intern: "intern" };
-const user_position = { designer: "designer", developer: "developer", manager: "Manager", tester: "tester" };
-
 
 
 
@@ -142,7 +139,7 @@ const filterCriteria = ref({
   assignedTo: '',
   requester: '',
   status: '',
-  employment_type: '',
+  employment_status: '',
   category: '',
   requester_position: '',
   closedOn: '',
@@ -161,7 +158,7 @@ function clearFilters() {
     assignedTo: '',
     requester: '',
     status: '',
-    employment_type: '',
+    employment_status: '',
     category: '',
     requester_position: '',
     closedOn: '',
@@ -189,7 +186,7 @@ function toggleFilterMenu() {
 }
 
 function handleColumnClick(columnName) {
-  console.log('Clicked column:', columnName);
+
   if (sortingColumn.value === columnName) {
 
     sortingDirection.value = sortingDirection.value === 'asc' ? 'desc' : 'asc';
@@ -200,8 +197,7 @@ function handleColumnClick(columnName) {
   // Do not try to modify filteredArchiveItems here
 }
 function sortItems(tickets) {
-  console.log('Sorting column:', sortingColumn.value);
-  console.log('Before sorting:', tickets);
+
   if (sortingColumn.value) {
     // Create a copy of the tickets array before sorting
     const sortedTickets =  [...tickets].sort((a, b) => {
@@ -220,7 +216,7 @@ function sortItems(tickets) {
 
       return (valueA < valueB ? -1 : 1) * (sortingDirection.value === 'asc' ? 1 : -1);
     });
-    console.log('After sorting:', sortedTickets);
+
     return sortedTickets;
   }
   return tickets;
@@ -252,13 +248,13 @@ function closeExtendedView() {
 }
 function applyFilters() {
   let tempFilteredResults = JSON.parse(JSON.stringify(archiveItems.value));
-  console.log(tempFilteredResults);
-  console.log(archiveItems)
+  console.log('tempFilteredResults', tempFilteredResults);
   tempFilteredResults = tempFilteredResults.filter(ticket => {
-    console.log(filteredResults.value)
+    console.log(filteredResults.value);
 
     console.log("Item:", ticket);
-    // Check if closedOn is not empty or null
+    console.log("Filter Criteria:", filterCriteria.value);
+
     // Artifact ID comparison (assuming it's numeric)
     const matchesArtifactId = filterCriteria.value.id ? ticket.id === filterCriteria.value.id : true;
 
@@ -266,18 +262,20 @@ function applyFilters() {
     const matchesRequesterId = filterCriteria.value.requsterId ? ticket.requsterId.toLowerCase().includes(filterCriteria.value.requsterId.toLowerCase()) : true;
     const matchesArtifactTitle = filterCriteria.value.title ? ticket.title.toLowerCase().includes(filterCriteria.value.title.toLowerCase()) : true;
     const matchesAssignedTo = filterCriteria.value.assignedTo ? ticket.assignedTo.toLowerCase().includes(filterCriteria.value.assignedTo.toLowerCase()) : true;
-    const matchesrequester = filterCriteria.value.requester ? ticket.requester.toLowerCase().includes(filterCriteria.value.requester.toLowerCase()) : true;
+    const matchesCreatedBy = filterCriteria.value.requester ? ticket.requester.toLowerCase().includes(filterCriteria.value.requester.toLowerCase()) : true;
 
     // Dropdown filter comparisons using dynamically received constants
-    const matchesPriority = filterCriteria.value.priority ? ticket.priority.toLowerCase() === ticket_priority[filterCriteria.value.priority].toLowerCase() : true;
-    const matchesStatus = filterCriteria.value.status ? ticket.status.toLowerCase() === ticket_status[filterCriteria.value.status].toLowerCase() : true;
-    const matchesemployment_type = filterCriteria.value.employment_type ? ticket.employment_type.toLowerCase() === employment_status[filterCriteria.value.employment_type].toLowerCase() : true;
-    const matchesCategory = filterCriteria.value.category ? ticket.category.toLowerCase() === required_category[filterCriteria.value.category].toLowerCase() : true;
-    const matchesUserrequester_position = filterCriteria.value.user_position ? ticket.requester_position.toLowerCase() === user_position[filterCriteria.value.user_position].toLowerCase() : true;
+    const matchesPriority = filterCriteria.value.priority ? ticket.priority === ticket_priority.value[filterCriteria.value.priority] : true;
+    const matchesStatus = filterCriteria.value.status ? ticket.status === ticket_status.value[filterCriteria.value.status] : true;
+    const matchesEmploymentStatus = filterCriteria.value.employment_status ? ticket.employment_type === employment_status.value[filterCriteria.value.employment_status] : true;
+    const matchesCategory = filterCriteria.value.category ? ticket.category === required_category.value[filterCriteria.value.category] : true;
+    const matchesUserRole = filterCriteria.value.position ? ticket.requester_position === position.value[filterCriteria.value.position] : true;
+
+
 
     // Additional filter criteria
-    const matchesManager = filterCriteria.value.manager ? ticket.assignedTo.toLowerCase() === ticket_manager[filterCriteria.value.manager].toLowerCase() : true;
-    const matchesPermissionRequired = filterCriteria.value.permission_required ? ticket.permissionRequired.toLowerCase() === permission_required[filterCriteria.value.permission_required].toLowerCase() : true;
+    const matchesManager = filterCriteria.value.manager ? ticket.assignedTo === ticket_manager.value[filterCriteria.value.manager] : true;
+    const matchesPermissionRequired = filterCriteria.value.permission_required ? ticket.permission_required === permission_required.value[filterCriteria.value.permission_required] : true;
 
     // Global search and date filters
     const matchesGlobalSearch = filterCriteria.value.globalSearch ? Object.values(ticket).some(value => value.toString().toLowerCase().includes(filterCriteria.value.globalSearch.toLowerCase())) : true;
@@ -285,16 +283,17 @@ function applyFilters() {
     const matchesEndDate = filterCriteria.value.endDate ? new Date(ticket.closedOn) <= new Date(filterCriteria.value.endDate) : true;
 
     // Return true only if all filter conditions are met
-    return matchesArtifactId && matchesRequesterId && matchesArtifactTitle && matchesAssignedTo && matchesrequester &&
-        matchesPriority && matchesStatus && matchesemployment_type && matchesCategory && matchesUserrequester_position &&
+    return matchesArtifactId && matchesRequesterId && matchesArtifactTitle && matchesAssignedTo && matchesCreatedBy &&
+        matchesPriority && matchesStatus && matchesEmploymentStatus && matchesCategory && matchesUserRole &&
         matchesManager && matchesPermissionRequired && matchesGlobalSearch && matchesStartDate && matchesEndDate;
   });
-  filteredResults.value = tempFilteredResults;
-  // Show the search results header
-  showSearchResults.value = true;
 
-  console.log('Filtered Results:', filteredResults.value);
+  filteredResults.value = tempFilteredResults;
+  showSearchResults.value = true;
+  currentPage.value = 1; // Reset to the first page after applying filters
+  totalPages.value = Math.ceil(filteredResults.value.length / rows.value);
 }
+
 
 watch(() => filteredArchiveItems.value, (newValue) => {
   console.log('filteredArchiveItems updated:', newValue);
@@ -312,13 +311,12 @@ const toggleAllRowSelection = () => {
   selectedRows.value = allRowsSelected.value ? [] : filteredArchiveItems.value;
 };
 
-const exportToPDF = () => {
+const exportToExcel = () => {
   if (selectedRows.value.length === 0) {
     alert('Please select at least one row to export.');
     return;
   }
 
-  const doc = new jsPDF('l', 'mm', 'a4');
   const tableData = selectedRows.value.map(ticket => [
     ticket.id,
     ticket.requsterId,
@@ -347,28 +345,26 @@ const exportToPDF = () => {
     'Closed On'
   ];
 
-  const tableConfig = {
-    head: [tableHeaders],
-    body: tableData,
-    startY: 20,
-    headStyles: {
-      fillColor: [41, 128, 185],
-      textColor: 255,
-      halign: 'center'
-    }
-  };
+  const worksheet = XLSX.utils.aoa_to_sheet([tableHeaders, ...tableData]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Tickets');
 
-  doc.autoTable(tableConfig);
-
-  doc.save('exported_tickets.pdf');
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'exported_tickets.xlsx';
+  link.click();
 };
+
 </script>
 
 
 <script>
 import {ref} from "vue";
 import ExtendedItem from "./extended_item.vue";
-import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
+
 import 'jspdf-autotable';
 import Navbar from "./nav_bar.vue";
 import { useRouter } from 'vue-router';
@@ -406,7 +402,7 @@ export default {
               </div>
             </div>
 
-            <button class="btn export" @click="exportToPDF">Export</button>
+            <button class="btn export" @click="exportToExcel">Export</button>
 
           </div>
         </div>
@@ -465,8 +461,8 @@ export default {
 
         <div class="filter-ticket">
           <label for="user_role">User's Role:</label>
-          <select id="user_role" name="user_role" v-model="filterCriteria.user_position">
-            <option v-for="(label, value) in user_position" :key="value" :value="value">{{ label }}</option>
+          <select id="user_role" name="user_role" v-model="filterCriteria.position">
+            <option v-for="(label, value) in position" :key="value" :value="value">{{ label }}</option>
           </select>
         </div>
         <div class="filter-ticket_btn">

@@ -154,7 +154,7 @@ export default {
 
     <div class="newticket_header">
       <h1>New ticket</h1>
-      <button class="X" ><img @click="goTotickets" src="../assets/Plus.png" alt="X"></button>
+      <button class="X" ><img @click="router.push('/tickets');" src="../assets/Plus.png" alt="X"></button>
     </div>
       <div class="newticket_subject">
         <div class="label-container">

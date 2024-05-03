@@ -352,7 +352,33 @@ export default {
       }
     },
 
-  }
+    handleBeforeUnload(event) {
+      if (this.isEditing) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    },
+
+  },
+  mounted() {
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
+  },
+  beforeUnmount() {
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+  },
+
+  beforeRouteLeave(to, from, next) {
+    if (this.isEditing) {
+      const confirmLeave = window.confirm('You have unsaved changes. Are you sure you want to leave?');
+      if (confirmLeave) {
+        next();
+      } else {
+        next(false);
+      }
+    } else {
+      next();
+    }
+  },
 }
 </script>
 
@@ -363,7 +389,7 @@ export default {
       <div class = "header_edit_style">
         <h3 id="extended_subject_item">{{ ticket.title}}</h3>
         <button v-if="!isArchive && ticket.closedOn === '' && usersRole()" class="edit-button" @click="toggleEditing">
-          <img src='../assets/NotePencil.png' alt="Edit & save">
+          {{ isEditing ? 'Save' : 'Edit' }}
         </button>
       </div>
       <button class="X" @click.stop="$emit('closeExtendedView')"><img src="../assets/Plus.png" alt="X"></button>

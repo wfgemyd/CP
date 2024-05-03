@@ -1,12 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 
-
-//onMounted(async () => {
-//  await fetchTickets();
- // filterTickets(selectedStatus.value); // Make sure this is reactive or appropriately triggered
-//});
-
 </script>
 <script>
 import Navbar from "./nav_bar.vue";
@@ -43,10 +37,21 @@ export default {
         updatedOnStart: '',
         updatedOnEnd: '',
       },
+      currentPage: 1,
+      ticketsPerPage: 4,
+      totalPages: 0
+
     }
   },
   mounted() {
     this.fetchTickets();
+  },
+  computed: {
+    paginatedTickets() {
+      const startIndex = (this.currentPage - 1) * this.ticketsPerPage;
+      const endIndex = startIndex + this.ticketsPerPage;
+      return this.tickets.slice(startIndex, endIndex);
+    }
   },
   methods: {
     async fetchTickets() {
@@ -82,6 +87,8 @@ export default {
           }));
 
         this.originalTickets = [...this.tickets];
+
+        console.log('this.totalPages',this.totalPages);
         this.filterTickets(this.selectedStatus);
       } catch (err) {
         console.error('Error fetching tickets:', err);
@@ -170,27 +177,40 @@ export default {
       },
     filterTickets(status) {
       this.selectedStatus = status;
-      this.showSearchResults = false; // Hide the search results when filtering by status
+      this.showSearchResults = false;
 
       if (status === 'All') {
         this.tickets = [...this.originalTickets];
-        return;
+      } else {
+        this.tickets = this.originalTickets.filter(ticket => {
+          if (status === 'Closed') {
+            let today = new Date().toISOString().slice(0, 10);
+            return ticket.status === 'Closed' && ticket.closedOn === today;
+          }
+          if (status === 'Open') {
+            return ticket.status === 'Open';
+          }
+          if (status === 'Verifying') {
+            return ticket.status === 'Verifying';
+          }
+        });
       }
 
-      this.tickets = this.originalTickets.filter(ticket => {
-        if (status === 'Closed') {
-          // Assuming you want to check if the ticket was closed today
-          let today = new Date().toISOString().slice(0, 10); //for future use
-          console.log(today);
-          return ticket.status === 'Closed'  //&& ticket.closedOn === today
-        }
-        if (status === 'Open') {
-          return ticket.status === 'Open';
-        }
-        if (status === 'Verifying') {
-          return ticket.status === 'Verifying';
-        }
-      });
+      this.totalPages = Math.ceil(this.tickets.length / this.ticketsPerPage);
+      this.currentPage = 1; // Reset to the first page when filtering tickets
+    },
+    goToPage(page) {
+      this.currentPage = page;
+    },
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
     },
   }
 };
@@ -310,7 +330,7 @@ export default {
           Search Results
         </div>
 
-        <div v-for="ticket in tickets" :key="ticket.id">
+        <div v-for="ticket in paginatedTickets" :key="ticket.id">
           <component
               :is="ticket.id === expandedTicketId ? 'extended-item' : 'ticket-item'"
               :ticket="ticket"
@@ -318,6 +338,13 @@ export default {
               @click="ticket.id !== expandedTicketId && toggleExpandedView(ticket.id)"
               @closeExtendedView="closeExtendedView(ticket.id)"
           />
+        </div>
+        <div class="pagination">
+          <button @click="previousPage" :disabled="currentPage === 1">Previous</button>
+          <span v-for="page in totalPages" :key="page">
+    <button @click="goToPage(page)" :class="{ active: currentPage === page }">{{ page }}</button>
+  </span>
+          <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
         </div>
       </div>
     </div>
