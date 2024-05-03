@@ -1,0 +1,68 @@
+@use './radius.sass' as * //import all the variables from index.sass
+@use './colors.sass' as * //import all the variables from index.sass
+@use './fonts.sass' as * //import all the variables from index.sass
+@use './login.sass' as l //import all the variables from index.sass
+
+
+%btn
+  border: 0.125rem solid $container_background_color
+  border-radius: $radius_outer
+  padding: 8px 20px
+  font-size: $btn_fontsize
+  font-weight: $btn_fontweight
+  cursor: pointer
+  background-color: $p_in_nxp
+  color: $container_background_color
+  margin-top: 4rem - l.$distans_between_elements
+  margin-bottom: 3.75rem
+  font-family: $font_header
+
+
+  &:hover
+    background-color: $field_border
+    border-color: $p_in_nxp
+    color: $p_in_nxp
+
+  &:active
+    background-color: #468500
+    border-color: $p_in_nxp
+    color: $container_background_color
+
+.login_btn, .alltickets_header, .finalize_ticket, .finalize_checklist, .search-container, .alltickets_search-container
+  button
+    @extend %btn
+
+
+
+// Unified variables for easy theme adjustments
+$button-height: 1.3rem // Common height for both buttons
+$button-bg-color: rgba(138, 138, 138, 0.66)
+// Primary button color
+$button-hover-bg-color: darken($button-bg-color, 10%) // Darker shade for hover state
+$button-color: #ffffff // Text color
+$button-hover-color: $button-color // Text color on hover remains the same
+$button-padding: 0.5rem 1rem // Padding around the text and image
+$button-border-radius: 0.5rem // Rounded corners for the button
+$paperclip-size: 20px // Size of the paperclip image
+$comment-button-bg-color: #28a745 // Success button color
+$comment-button-hover-bg-color: darken($comment-button-bg-color, 10%) // Darker shade for hover state
+
+// Common button styling
+.button-common
+  height: $button-height
+  padding: $button-padding
+  border: none
+  border-radius: $button-border-radius
+  cursor: pointer
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  text-transform: uppercase // Uppercase text for a more button-like appearance
+  font-weight: bold
+  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out
+  margin-top: 0.5rem
+
+
+  // Hover effect
+  &:hover
+    color: $button-hover-color
