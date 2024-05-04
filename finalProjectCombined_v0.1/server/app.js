@@ -11,6 +11,7 @@ const login = require('./alltogether/login.js');
 const onboarding = require('./alltogether/onboarding.js');
 const tickets = require('./alltogether/tickets.js');
 const new_ticket = require('./alltogether/new_ticket.js');
+const emailAndSchedule = require('./alltogether/emailAndSchedule.js');
 
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/new_ticket', authorize, new_ticket);
 app.use('/api/archive', authorize, tickets);
 
 
+ 
 // Catch-all route to serve the Vue app for any other requests
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
