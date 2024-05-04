@@ -361,27 +361,41 @@ const exportToExcel = () => {
 
 
 <script>
-import {ref} from "vue";
+import { ref } from "vue";
 import ExtendedItem from "./extended_item.vue";
-import * as XLSX from 'xlsx';
-
 import 'jspdf-autotable';
 import Navbar from "./nav_bar.vue";
 import { useRouter } from 'vue-router';
-import TicketItem from './item_in_tickets.vue';
+import Ticket from './tickets.vue';
 
 export default {
   components: {
-  Navbar,
-  TicketItem,
-  ExtendedItem,
+    Navbar,
+    Ticket,
+    ExtendedItem,
   },
+  data() {
+    return {
+      searchTerm: '',
+    };
+  },
+  methods: {
+    handleSearch(searchTerm) {
+      this.searchTerm = searchTerm;
+      this.searchTickets();
+    },
+    searchTickets() {
+      // Navigate to the tickets page with the search term as a query parameter
+      this.$router.push({ path: '/tickets', query: { search: this.searchTerm } });
+    }
+
+  }
 }
 </script>
 
 <template>
   <div class="wrapper2">
-    <Navbar/>
+    <Navbar @search="handleSearch"/>
     <div class="tracker">
       <div class="title">
         <div class="archive_header">

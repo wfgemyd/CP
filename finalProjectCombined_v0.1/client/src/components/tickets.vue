@@ -43,8 +43,18 @@ export default {
 
     }
   },
-  mounted() {
-    this.fetchTickets();
+  async mounted() {
+    await this.fetchTickets();
+
+
+    // Check for the search query parameter
+    const searchTerm_ = this.$route.query.search;
+    if (searchTerm_) {
+      this.searchTerm = searchTerm_;
+      console.log('this.searchTerm', this.searchTerm);
+      this.searchTickets();
+    }
+
   },
   computed: {
     paginatedTickets() {
@@ -55,6 +65,7 @@ export default {
   },
   methods: {
     async fetchTickets() {
+      console.log('fetching tickets');
       try {
         const response = await fetch('/api/tickets', {
           headers: {
@@ -150,7 +161,13 @@ export default {
         return matchesId && matchesTitle && matchesStatus && matchesPriority && matchesCreatedOn && matchesUpdatedOn;
       });
     },
+    handleSearch(searchTerm) {
+      this.searchTerm = searchTerm;
+      this.searchTickets();
+    },
     searchTickets() {
+      console.log('this.searchTerm',this.searchTerm);
+
       const searchTerm = this.searchTerm.toLowerCase();
       this.tickets = this.originalTickets.filter(ticket =>
           ticket.title.toLowerCase().includes(searchTerm) ||
@@ -163,6 +180,7 @@ export default {
       this.showSearchResults = true;
       this.searchTerm = ''; // Clear the search term after searching
       this.selectedStatus = ''; // Unselect the status buttons when search results are displayed
+
     },
 
     closeExtendedView(ticketId) {
@@ -219,7 +237,7 @@ export default {
 
 <template>
   <div class="wrapper2">
-    <Navbar/>
+    <Navbar @search="handleSearch"/>
     <div class="alltickets_container">
       <div class="alltickets_window">
         <div class="alltickets_header">

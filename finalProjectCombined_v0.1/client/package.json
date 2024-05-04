@@ -15,8 +15,7 @@
     "jspdf-autotable": "^3.8.2",
     "volar-service-vetur": "^0.0.34",
     "vue": "^3.4.23",
-    "vue-router": "^4.0.13",
-    "xlsx": "^0.18.5"
+    "vue-router": "^4.0.13"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
