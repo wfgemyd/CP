@@ -1,5 +1,5 @@
 Couple things are still missing:
-1. Notifications
+1. Fetch ticket if a mistake was made (1-2min period).
 2. To make it feel like a live chat without page reload.
 
 
