@@ -204,7 +204,8 @@ CREATE TABLE Fproject.event_store (
     aggregate_id INT NOT NULL, -- The ticket ID to which the event relates
     payload JSON NOT NULL, -- Detailed event data (flexible structure)
     user_id INT REFERENCES Fproject."user"(id), -- The user responsible for the event
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    wbi VARCHAR REFERENCES Fproject."user"(WBI) -- The WBI of the user responsible for the event
 );
 
 CREATE TABLE Fproject.user_status (
@@ -249,8 +250,6 @@ CREATE INDEX idx_ticket_comment ON Fproject.ticket_comment USING GIN (to_tsvecto
 ---------------------------------------------------------------------------------
     -- Triggers
 -- Trigger for updating ticket status after 14 days of "verifying" status
-
---pg-cron extension is required to run the cron jobs in PostgreSQL, without it it is not efficient to run the cron jobs in PostgreSQL
 CREATE OR REPLACE FUNCTION Fproject.update_ticket_status()
     RETURNS TRIGGER AS $$
 DECLARE
@@ -273,10 +272,6 @@ END;
 $$
     LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_update_ticket_status
-AFTER UPDATE ON Fproject.ticket
-FOR EACH ROW
-EXECUTE FUNCTION Fproject.update_ticket_status();
 
 
 -- Trigger for new ticket creation
@@ -763,6 +758,7 @@ INSERT INTO Fproject."user" (WBI, f_name, l_name, email, role_id, employment_sta
 ('WBI789', 'Alice', 'Smith', 'test3@test.com', 3, 1, 'password', TRUE),
 ('WBI101', 'Bob', 'Johnson', 'test4@test.com', 3, 1, 'password', FALSE),
 ('WBI107', 'Bob', 'Johnson', 'test6@test.com', 4, 1, 'password', FALSE);
+
 
 
 INSERT INTO Fproject.checklist_template (checklist_name, role_id) VALUES
@@ -1305,8 +1301,8 @@ BEGIN
     -- Store the consolidated changes in the event store if there are any changes
     IF v_changes <> '{}'::JSONB THEN
         v_event_payload := jsonb_build_object('action', 'ticket_updated', 'changes', v_changes);
-        INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-        VALUES ('ticket_updated', 'ticket', p_ticket_id, v_event_payload, p_user_id);
+        INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id, wbi)
+        VALUES ('ticket_updated', 'ticket', p_ticket_id, v_event_payload, p_user_id, (SELECT WBI FROM Fproject."user" WHERE id = p_user_id));
     END IF;
 
     -- Add a comment and file if provided
@@ -1322,8 +1318,8 @@ BEGIN
         ELSE
             -- Otherwise, log it as a separate event
             v_comment_event_payload := json_build_object('action', 'comment_file_added', 'comment', p_comment, 'comment_id', v_comment_id);
-            INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-            VALUES ('comment_file_added', 'ticket', p_ticket_id, v_comment_event_payload, p_user_id);
+            INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id, wbi)
+            VALUES ('comment_file_added', 'ticket', p_ticket_id, v_comment_event_payload, p_user_id, (SELECT WBI FROM Fproject."user" WHERE id = p_user_id));
         END IF;
     END IF;
 
@@ -1378,26 +1374,27 @@ BEGIN
         -- Delete the ticket if within 5 minutes of creation
         DELETE FROM Fproject.ticket WHERE id = p_ticket_id;
         -- Optionally, log ticket deletion
-        INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-        VALUES ('ticket_deleted', 'ticket', p_ticket_id, '{"action": "ticket_deleted"}', p_user_id);
+        INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id, wbi)
+        VALUES ('ticket_deleted', 'ticket', p_ticket_id, '{"action": "ticket_deleted"}', p_user_id, (SELECT WBI FROM Fproject."user" WHERE id = p_user_id));
     ELSE
         -- Update the ticket status to 'Closed' if it's past 5 minutes
         UPDATE Fproject.ticket
         SET status_id = v_closed_status_id, completed_at = CURRENT_TIMESTAMP
         WHERE id = p_ticket_id;
         -- Log ticket closure event
-        INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
-        VALUES ('ticket_closed', 'ticket', p_ticket_id, '{"action": "ticket_closed"}', p_user_id);
+        INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id, wbi)
+        VALUES ('ticket_closed', 'ticket', p_ticket_id, '{"action": "ticket_closed"}', p_user_id, (SELECT WBI FROM Fproject."user" WHERE id = p_user_id));
     END IF;
 
     -- Log ticket closure or deletion event
-    INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id)
+    INSERT INTO Fproject.event_store(event_type, aggregate_type, aggregate_id, payload, user_id, wbi)
     VALUES (
                CASE WHEN (EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - v_created_at)) / 60) <= 5 THEN 'ticket_deleted' ELSE 'ticket_closed' END,
                'ticket',
                p_ticket_id,
                CASE WHEN (EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - v_created_at)) / 60) <= 5 THEN '{"action": "ticket_deleted"}' ELSE '{"action": "ticket_closed"}' END,
-               (SELECT user_id FROM Fproject.ticket WHERE id = p_ticket_id) -- Log the user who created the ticket
+               (SELECT user_id FROM Fproject.ticket WHERE id = p_ticket_id), -- Log the user who created the ticket
+                (SELECT WBI FROM Fproject."user" WHERE id = (SELECT user_id FROM Fproject.ticket WHERE id = p_ticket_id))
            );
 END;
 $$;
@@ -1422,7 +1419,8 @@ CREATE OR REPLACE FUNCTION Fproject.get_user_tickets(p_user_id INT)
                      requester_employment_status VARCHAR,
                      attachment_name VARCHAR,
                      attachment_type VARCHAR,
-                     wbi VARCHAR
+                     wbi VARCHAR,
+                     requester_email VARCHAR
                  ) AS $$
 DECLARE
     user_role VARCHAR;
@@ -1452,7 +1450,8 @@ BEGIN
                    (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status,
                    t.attachment_name,
                    t.attachment_type,
-                   (SELECT u2.wbi::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS wbi
+                   (SELECT u2.wbi::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS wbi,
+                   (SELECT u2.email::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_email
             FROM Fproject.ticket t
                      JOIN Fproject.ticket_status ts ON t.status_id = ts.id
                      JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
@@ -1477,7 +1476,8 @@ BEGIN
                    (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status,
                     t.attachment_name,
                     t.attachment_type,
-                   (SELECT u2.wbi::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS wbi
+                   (SELECT u2.wbi::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS wbi,
+                   (SELECT u2.email::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_email
             FROM Fproject.ticket t
                      JOIN Fproject.ticket_status ts ON t.status_id = ts.id
                      JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
@@ -1507,7 +1507,8 @@ BEGIN
                    (SELECT es.employment_name FROM Fproject."user" u JOIN Fproject.employment_status es ON u.employment_status_id = es.id WHERE u.id = t.user_id) AS requester_employment_status,
                    t.attachment_name,
                    t.attachment_type,
-                   (SELECT u2.wbi::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS wbi
+                   (SELECT u2.wbi::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS wbi,
+                   (SELECT u2.email::VARCHAR FROM Fproject."user" u2 WHERE u2.id = t.user_id) AS requester_email
             FROM Fproject.ticket t
                      JOIN Fproject.ticket_status ts ON t.status_id = ts.id
                      JOIN Fproject.ticket_priorities tp ON t.priority_id = tp.id
@@ -1559,3 +1560,15 @@ $$
     LANGUAGE plpgsql;
 
 select * from Fproject.get_ticket_options();
+
+
+CREATE OR REPLACE FUNCTION Fproject.get_wbi_by_user_id(p_user_id INT)
+    RETURNS VARCHAR AS $$
+DECLARE
+    v_wbi VARCHAR;
+BEGIN
+    SELECT WBI INTO v_wbi FROM Fproject."user" WHERE id = p_user_id;
+    RETURN v_wbi;
+END;
+$$
+LANGUAGE plpgsql;

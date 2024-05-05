@@ -110,5 +110,27 @@ async function sendDailyTicketsEmail() {
     }
 }
 //https://ethereal.email/create
-sendDailyTicketsEmail().then(r => console.log('Email sent successfully')).catch(e => console.error('Error sending email:', e));
-module.exports = router;
+//sendDailyTicketsEmail().then(r => console.log('Email sent successfully')).catch(e => console.error('Error sending email:', e));
+
+
+// Scheduled task to run every 5 minutes
+cron.schedule('*/5 * * * *', async () => {
+    console.log('Running scheduled task to update new notifications...');
+    await newNotifications();
+});
+
+async function newNotifications(userId, io) {
+    try {
+        const result = await db.query('SELECT * FROM Fproject.notifications WHERE user_id = $1 AND read = false', [userId]);
+
+        if (result.rows.length > 0) {
+            // Emit a WebSocket event to the specific user
+            io.to(userId).emit('new-notification');
+        }
+        console.log('Notifications checked successfully.');
+    } catch (err) {
+        console.error('Error retrieving new notifications:', err);
+    }
+}
+
+module.exports = {router: router, newNotifications: newNotifications};

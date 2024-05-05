@@ -225,6 +225,23 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+router.post('/event_store', async (req, res) => {
+    try {
+        const { user_id } = req.body;
 
+        const wbi = await db.query(`SELECT * FROM Fproject.get_wbi_by_user_id(${user_id})`);
+
+        if (wbi.rows.length === 0) {
+            return res.status(404).json({ message: 'No data found' });
+        }
+
+
+
+        res.json(wbi.rows[0]);
+    } catch (error) {
+        console.error('Failed to fetch ticket events:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 module.exports = router;
