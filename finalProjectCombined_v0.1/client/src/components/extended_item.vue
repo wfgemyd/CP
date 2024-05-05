@@ -1,6 +1,7 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {capitalize, computed, onMounted, ref} from 'vue';
 import { useRoute } from 'vue-router';
+import axios from "axios";
 
 const route = useRoute();
 const isArchiveRoute = computed(() => route.path.includes('/archive'));
@@ -93,7 +94,7 @@ onMounted(async () => {
     console.error('Stack trace:', error.stack);
   }
 });
-function associateEventsWithComments() {
+async function associateEventsWithComments() {
   const timeThreshold = 5 * 60 * 1000; // 5 minutes in milliseconds
 
   // Associate events with comments
@@ -114,11 +115,11 @@ function associateEventsWithComments() {
   );
 
   // Get unassociated events
-  const unassociatedEvents = getUnassociatedEvents();
+  const unassociatedEvents = await getUnassociatedEvents();
 
   // Combine comments and unassociated events
   const combinedData = [...ticketComments.value, ...unassociatedEvents];
-console.log('combinedData:', combinedData);
+
   // Sort combined data by created_at date
   combinedData.sort((a, b) => {
     const dateA = new Date(a.created_at);
@@ -134,13 +135,23 @@ function getUnassociatedEvents() {
   // Assuming ticketEvents.value is an array of event objects
   return ticketEvents.value.map(event => ({
     ...event,
-    comment: event.event_type + ': ' + getEventDetails(event), // Construct a comment-like string for events
+    comment: getEventDetails(event), // Construct a comment-like string for events
     created_at: event.created_at,
     id: event.event_id, // Ensure each event has a unique key
-    user_id: event.user_id
+    wbi_id: event.wbi
   }));
 }
 
+//async function getWbiFromuser_id(user_id) {
+ // const response = await axios.post(`/api/tickets/event_store`, { user_id }, {
+ //   headers: {
+ //     'Authorization': `${localStorage.getItem('token')}`
+ //   }
+ // });
+ // const wbiData = response.data;
+ // console.log('wbiData:', wbiData.get_wbi_by_user_id);
+ // return wbiData.get_wbi_by_user_id;
+//}
 
 function getEventDetails(event) {
   const payload = event.payload;
@@ -157,13 +168,14 @@ function getEventDetails(event) {
     case 'ticket_updated':
       const changes = payload.changes;
       const changeDetails = Object.entries(changes)
-          .map(([key, value]) => `${key} changed to: ${value}`)
+          .map(([key, value]) => `${capitalize(key)} changed to: ${value}`)
           .join(', ');
-      return `Ticket updated: ${changeDetails}`;
+      return `${changeDetails}`;
     default:
       return '';
   }
 }
+
 function formatCreatedAt(dateString) {
   const date = new Date(dateString);
   return date.toLocaleString('en-US', {
@@ -501,7 +513,7 @@ export default {
                     'other-user-name': !comment.isSender,
                     'update-label': !(comment.f_name || comment.l_name)
                   }">
-                    {{ (comment.f_name || comment.l_name) ? `${comment.f_name} ${comment.l_name}` :  `'Update by:'${comment.user_id}` }}:
+                    {{ (comment.f_name || comment.l_name) ? `${comment.f_name} ${comment.l_name}` :  `${comment.wbi_id} Updated` }}:
                   </span>
                             {{ comment.comment }}
               </p>
