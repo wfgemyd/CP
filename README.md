@@ -3,7 +3,7 @@ Possiable Add-on:
 
 
 
-In the server folder:
+**In the server folder:**
 
 npm install
 
@@ -34,7 +34,7 @@ npm install @kyvg/vue3-notification
 npm install socket.io
 
 
-In the client folder:
+**In the client folder:**
 
 npm install 
 
@@ -61,7 +61,7 @@ npm install socket.io-client
 npm install xlsx (not recommended)
 
 
-In the main folder:
+**In the main folder:**
 
 npm install 
 
