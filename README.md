@@ -1,6 +1,7 @@
 Possiable Add-on:
 (out of scope) To add an admin page where the admin could add users, projects, positions, etc.
 
+______________________________________________________________
 
 
 **In the server folder:**
@@ -33,6 +34,8 @@ npm install @kyvg/vue3-notification
 
 npm install socket.io
 
+______________________________________________________________
+
 
 **In the client folder:**
 
@@ -59,6 +62,8 @@ npm install path
 npm install socket.io-client
 
 npm install xlsx (not recommended)
+
+______________________________________________________________
 
 
 **In the main folder:**
